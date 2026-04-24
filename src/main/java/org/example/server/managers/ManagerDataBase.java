@@ -283,7 +283,7 @@ public class ManagerDataBase {
         }
     }
 
-    public synchronized Route getDB(long id, String login) {
+    public Route getDB(long id, String login) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return null;
@@ -344,7 +344,7 @@ public class ManagerDataBase {
         }
     }
 
-    public synchronized PriorityQueue<Route> getRoutesDB() {
+    public PriorityQueue<Route> getRoutesDB() {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return new PriorityQueue<Route>();
