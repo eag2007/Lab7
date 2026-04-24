@@ -64,7 +64,7 @@ JAR файлы появятся в папке `build/libs/`
 Указать в файле ```db.properties``` характеристики БД
 
 ```bash
-java -jar build/libs/server-1.0.jar [номер порта]
+java -jar build/libs/server.jar [номер порта]
 ```
 
 ```bash
@@ -75,7 +75,7 @@ java -jar server.jar [порт]
 ### 4. Запуск клиента
 
 ```bash
-java -jar build/libs/client-1.0.jar [номер порта]
+java -jar build/libs/client.jar [номер порта]
 ```
 
 ```bash
