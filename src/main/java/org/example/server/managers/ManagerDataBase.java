@@ -107,6 +107,7 @@ public class ManagerDataBase {
                     id SERIAL PRIMARY KEY,
                     login VARCHAR(50) UNIQUE NOT NULL,
                     password VARCHAR(300) NOT NULL,
+                    salt VARCHAR(64) NOT NULL,
                     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """;
@@ -145,19 +146,7 @@ public class ManagerDataBase {
             return -3;
         }
 
-        String checkRoute = "SELECT id FROM routes WHERE name = ? AND author = ?";
-
         try {
-            PreparedStatement checkStmt = connection.prepareStatement(checkRoute);
-            checkStmt.setString(1, routeClient.getName());
-            checkStmt.setString(2, author);
-            ResultSet checkRs = checkStmt.executeQuery();
-
-            if (checkRs.next()) {
-                ServerLogger.debug("Маршрут с таким именем уже существует у пользователя {}", author);
-                return -1;
-            }
-
             String addRoute = """
                     INSERT INTO routes (name, coordinates_x, coordinates_y, from_x, from_y, from_z,
                     to_x, to_y, to_z, distance, price, author) 
@@ -400,25 +389,71 @@ public class ManagerDataBase {
         }
     }
 
-    public boolean checkUserPassword(String login, String password) {
-        if (connection == null) {
-            ServerLogger.error("Нет подключения к БД");
+    public synchronized boolean checkUserPassword(String login, String password) {
+        if (!repeatConnect()) {
+            ServerLogger.error("БД недоступна. Проверка пароля пропущена.");
             return false;
         }
 
-        String checkUserPassword = "SELECT * FROM users WHERE login = ? AND password = ?";
-
         try {
-            PreparedStatement pstmt = connection.prepareStatement(checkUserPassword);
+            String getSalt = "SELECT salt FROM users WHERE login = ?";
+
+            PreparedStatement saltStmt = connection.prepareStatement(getSalt);
+            saltStmt.setString(1, login);
+
+            ResultSet saltRs = saltStmt.executeQuery();
+
+            if (!saltRs.next()) {
+                return false;
+            }
+
+            String salt = saltRs.getString("salt");
+
+            String inputHash = ManagerHasher.hash(password, salt);
+
+            String checkPassword = "SELECT 1 FROM users WHERE login = ? AND password = ?";
+            PreparedStatement pstmt = connection.prepareStatement(checkPassword);
 
             pstmt.setString(1, login);
-            pstmt.setString(2, ManagerHasher.hash(password));
+            pstmt.setString(2, inputHash);
 
             ResultSet rs = pstmt.executeQuery();
 
             return rs.next();
+
         } catch (SQLException e) {
+            String sqlState = e.getSQLState();
+            if (sqlState != null && sqlState.startsWith("08")) {
+                ServerLogger.debug("Соединение с БД потеряно");
+                repeatConnect();
+            } else {
+                ServerLogger.error("Ошибка проверки пароля [{}]: {}", sqlState, e.getMessage());
+            }
             return false;
+        }
+    }
+
+    public synchronized boolean repeatConnect() {
+        try {
+            if (connection == null || connection.isClosed()) {
+                connectDB();
+                return true;
+            }
+            if (!connection.isValid(3)) {
+                ServerLogger.debug("Соединение невалидно, переподключаюсь...");
+                connectDB();
+                return true;
+            }
+            return true;
+        } catch (SQLException e) {
+            ServerLogger.error("Не удалось проверить/восстановить соединение: {}", e.getMessage());
+            try {
+                connectDB();
+                return true;
+            } catch (SQLException ex) {
+                ServerLogger.error("БД недоступна после попытки переподключения");
+                return false;
+            }
         }
     }
 
@@ -434,7 +469,10 @@ public class ManagerDataBase {
     }
 
     public Connection getConnection() {
+        if (!repeatConnect()) {
+            ServerLogger.debug("БД недоступна Подключение getConnection");
+            return null;
+        }
         return connection;
     }
-
 }

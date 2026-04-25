@@ -16,57 +16,136 @@ import static org.example.server.Server.writeModule;
 public class Login implements Command {
     public int executeCommand(String[] args, RouteClient values, SocketChannel client, String login, String password) {
         try {
+
+
             Connection conn = Server.managerDataBase.getConnection();
+            if (conn == null) {
 
-            PreparedStatement pstmt = conn.prepareStatement("SELECT password FROM users WHERE login = ?");
+                ResponsePacket responsePacket = new ResponsePacket(
+                        500,
+                        "База данных временно недоступна",
+                        null
+                );
+
+
+                /// ОБРАБОТКА ЗАПИСИ
+                Server.getWrite().submit(() -> {
+                    try {
+                        writeModule.writeResponseForClient(client,
+                                new ResponsePacket(500, "База данных временно недоступна", null));
+                    } catch (Exception ignored) {}
+                });
+                /// ОБРАБОТКА ЗАПИСИ
+
+
+                return 500;
+            }
+
+            PreparedStatement pstmt = conn.prepareStatement(
+                    "SELECT password, salt FROM users WHERE login = ?"
+            );
+
             pstmt.setString(1, login);
-
             ResultSet rs = pstmt.executeQuery();
 
             if (rs.next()) {
-                if (rs.getString("password").equals(ManagerHasher.hash(password))) {
+                String passwordHash = rs.getString("password");
+                String salt = rs.getString("salt");
 
-                    writeModule.writeResponseForClient(client, new ResponsePacket(
+                String inputHash = ManagerHasher.hash(password, salt);
+
+                if (passwordHash.equals(inputHash)) {
+
+                    ResponsePacket response = new ResponsePacket(
                             200,
-                            "Успешно залогинился",
+                            "Успешно вошли в аккаунт",
                             null
-                    ));
+                    );
 
-                    ServerLogger.info("Успешно вошли под логином: {}", login);
+                    ServerLogger.info("Успешный вход: {}", login);
+
+
+                    ///  ОБРАБОТКА  ЗАПИСИ
+                    Server.getWrite().submit(() -> {
+                        try {
+                            writeModule.writeResponseForClient(client, response);
+                        } catch (IOException e) {
+                            ServerLogger.error("Ошибка отправки {}", e.getMessage());
+                        }
+                    });
+                    /// ОБРАБОТКА ЗАПИСИ
+
+
                     return 200;
                 } else {
 
-                    writeModule.writeResponseForClient(client, new ResponsePacket(
-                            500,
+                    ResponsePacket response = new ResponsePacket(
+                            400,
                             "Неверный пароль",
                             null
-                    ));
+                    );
 
                     ServerLogger.info("Неверный пароль: {}", login);
-                    return 500;
+
+
+                    ///  ОБРАБОТКА  ЗАПИСИ
+                    Server.getWrite().submit(() -> {
+                        try {
+                            writeModule.writeResponseForClient(client, response);
+                        } catch (IOException e) {
+                            ServerLogger.error("Ошибка отправки {}", e.getMessage());
+                        }
+                    });
+                    /// ОБРАБОТКА ЗАПИСИ
+
+
+                    return 400;
                 }
             } else {
-                writeModule.writeResponseForClient(client, new ResponsePacket(
+
+                ResponsePacket response = new ResponsePacket(
                         400,
                         "Пользователь не найден",
                         null
-                ));
+                );
+
+                ServerLogger.info("Пользователь не найден: {}", login);
+
+
+                ///  ОБРАБОТКА  ЗАПИСИ
+                Server.getWrite().submit(() -> {
+                    try {
+                        writeModule.writeResponseForClient(client, response);
+                    } catch (IOException e) {
+                        ServerLogger.error("Ошибка отправки {}", e.getMessage());
+                    }
+                });
+                /// ОБРАБОТКА ЗАПИСИ
+
 
                 return 400;
             }
 
-        } catch (Exception e) {
-            ServerLogger.error("Неверный логин: {}", e.getMessage());
-            try {
-                writeModule.writeResponseForClient(client, new ResponsePacket(
-                        500,
-                        "Ошибка Входа",
-                        null
-                ));
+        } catch (SQLException e) {
+            ServerLogger.error("Ошибка БД при входе: {}", e.getMessage());
+            ResponsePacket response = new ResponsePacket(
+                    500,
+                    "Ошибка входа: " + e.getMessage(),
+                    null
+            );
 
-            } catch (IOException ex) {
-                ServerLogger.error("Ошибка отправки при неверном логине");
-            }
+
+            ///  ОБРАБОТКА  ЗАПИСИ
+            Server.getWrite().submit(() -> {
+                try {
+                    writeModule.writeResponseForClient(client, response);
+                } catch (IOException ex) {
+                    ServerLogger.error("Ошибка отправки {}", ex.getMessage());
+                }
+            });
+            /// ОБРАБОТКА ЗАПИСИ
+
+
             return 500;
         }
     }

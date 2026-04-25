@@ -16,30 +16,77 @@ import static org.example.server.Server.writeModule;
 public class Register implements Command {
     public int executeCommand(String[] args, RouteClient values, SocketChannel client, String login, String password) {
         try {
+
+            Connection conn = Server.managerDataBase.getConnection();
+            if (conn == null) {
+
+
+                /// ОБРАБОТКА ЗАПИСИ
+                Server.getWrite().submit(() -> {
+                    try {
+                        writeModule.writeResponseForClient(client,
+                                new ResponsePacket(500, "База данных временно недоступна", null));
+                    } catch (Exception ignored) {}
+                });
+                /// ОБРАБОТКА ЗАПИСИ
+
+
+                return 500;
+            }
+
             if (password.length() < 4) {
-                writeModule.writeResponseForClient(client, new ResponsePacket(
+                ResponsePacket response = new ResponsePacket(
                         400,
                         "Пароль слишком короткий",
                         null
-                ));
+                );
 
+
+                ///  ОБРАБОТКА  ЗАПИСИ
+                Server.getWrite().submit(() -> {
+                    try {
+                        writeModule.writeResponseForClient(client, response);
+                    } catch (IOException e) {
+                        ServerLogger.error("Ошибка отправки {}", e.getMessage());
+                    }
+                });
+                /// ОБРАБОТКА ЗАПИСИ
+
+
+                ServerLogger.debug("Короткий пароль");
                 return 400;
             }
 
-            Connection conn = Server.managerDataBase.getConnection();
+            conn = Server.managerDataBase.getConnection();
 
-            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO users (login, password) VALUES (?, ?)");
+            PreparedStatement pstmt = conn.prepareStatement("INSERT INTO users (login, password, salt) VALUES (?, ?, ?)");
+
+            String salt = ManagerHasher.salt();
+            String hash = ManagerHasher.hash(password, salt);
 
             pstmt.setString(1, login);
-            pstmt.setString(2, ManagerHasher.hash(password));
+            pstmt.setString(2, hash);
+            pstmt.setString(3, salt);
 
             pstmt.executeUpdate();
 
-            writeModule.writeResponseForClient(client, new ResponsePacket(
+            ResponsePacket response = new ResponsePacket(
                     200,
                     "Пользователь зарегистрирован",
                     null
-            ));
+            );
+
+
+            ///  ОБРАБОТКА  ЗАПИСИ
+            Server.getWrite().submit(() -> {
+                try {
+                    writeModule.writeResponseForClient(client, response);
+                } catch (IOException e) {
+                    ServerLogger.error("Ошибка отправки {}", e.getMessage());
+                }
+            });
+            /// ОБРАБОТКА ЗАПИСИ
+
 
             ServerLogger.info("Регистрация прошла успешно с логином: {}", login);
             return 200;
@@ -47,41 +94,69 @@ public class Register implements Command {
         } catch (SQLException e) {
             ServerLogger.error("Ошибка Регистрации: {}", e.getMessage());
             if (e.getMessage().contains("unique")) {
-                try {
-                    writeModule.writeResponseForClient(client, new ResponsePacket(
-                            400,
-                            "Пользователь существует",
-                            null
-                    ));
+                ResponsePacket response = new ResponsePacket(
+                        400,
+                        "Пользователь существует",
+                        null
+                );
 
-                } catch (IOException ex) {
-                    ServerLogger.info("Произошла ошибка при отправке");
-                }
+
+                ///  ОБРАБОТКА  ЗАПИСИ
+                Server.getWrite().submit(() -> {
+                    try {
+                        writeModule.writeResponseForClient(client, response);
+                    } catch (IOException ei) {
+                        ServerLogger.error("Ошибка отправки {}", ei.getMessage());
+                    }
+                });
+                /// ОБРАБОТКА ЗАПИСИ
+
+
+                ServerLogger.debug("Пользователь {} уже существует", login);
             } else {
-                try {
-                    writeModule.writeResponseForClient(client, new ResponsePacket(
-                            500,
-                            "Ошибка базы данных",
-                            null
-                    ));
+                ResponsePacket response = new ResponsePacket(
+                        500,
+                        "Ошибка базы данных",
+                        null
+                );
 
-                } catch (IOException ex) {
-                    ServerLogger.info("Произошла ошибка при работе с БД");
-                }
+
+                ///  ОБРАБОТКА  ЗАПИСИ
+                Server.getWrite().submit(() -> {
+                    try {
+                        writeModule.writeResponseForClient(client, response);
+                    } catch (IOException ei) {
+                        ServerLogger.error("Ошибка отправки {}", ei.getMessage());
+                    }
+                });
+                /// ОБРАБОТКА ЗАПИСИ
+
+
+                ServerLogger.debug("Ошибка в БД");
             }
             return 500;
         } catch (Exception e) {
             ServerLogger.error("Ошибка Регистрации: {}", e.getMessage());
-            try {
-                writeModule.writeResponseForClient(client, new ResponsePacket(
-                        500,
-                        "Ошибка Регистрации",
-                        null
-                ));
 
-            } catch (Exception ex) {
-                ServerLogger.info("Ошибка отправки при регистрации: {}", e.getMessage());
-            }
+
+            ResponsePacket response = new ResponsePacket(
+                    500,
+                    "Ошибка Регистрации",
+                    null
+            );
+
+
+            ///  ОБРАБОТКА  ЗАПИСИ
+            Server.getWrite().submit(() -> {
+                try {
+                    writeModule.writeResponseForClient(client, response);
+                } catch (IOException ei) {
+                    ServerLogger.error("Ошибка отправки {}", ei.getMessage());
+                }
+            });
+            /// ОБРАБОТКА ЗАПИСИ
+
+
             return 500;
         }
     }
