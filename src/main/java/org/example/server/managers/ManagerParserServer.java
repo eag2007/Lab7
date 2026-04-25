@@ -1,17 +1,17 @@
 package org.example.server.managers;
 
 import org.example.packet.CommandPacket;
+import org.example.packet.ResponsePacket;
 import org.example.server.commands.*;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.*;
 
 import static org.example.server.Server.managerDataBase;
+import static org.example.server.Server.writeModule;
 
 public class ManagerParserServer {
     private final HashMap<String, Command> commands;
@@ -40,17 +40,18 @@ public class ManagerParserServer {
         String password = commandPacket.getPassword();
 
         if (!command_name.equals("login") && !command_name.equals("register")) {
+
+            if (!managerDataBase.repeatConnect()) {
+                sendError(clientChannel, 400, "База данных временно недоступна. Попробуйте позже");
+                ServerLogger.debug("БД недоступна при выполнении команды {} от {}", command_name, login);
+                return 400;
+            }
+
             if (!managerDataBase.checkUserPassword(login, password)) {
                 ServerLogger.info("ПОПЫТКА ВЗЛОМА под логином пользователя {}", login);
 
-                try {
-                    String response = "За вашим поведением начнут следить" + command_name;
-                    clientChannel.write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
-                } catch (IOException e) {
-                    ServerLogger.error("Ошибка отправки ответа: {}", e.getMessage());
-                }
-
-                return 401;
+                sendError(clientChannel, 500, "За вашим поведением начнут следить");
+                return 500;
             }
         }
 
@@ -72,13 +73,22 @@ public class ManagerParserServer {
                 return 500;
             }
         } else {
-            try {
-                String response = "Неизвестная команда: " + command_name;
-                clientChannel.write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
-            } catch (IOException e) {
-                ServerLogger.error("Ошибка отправки ответа: {}", e.getMessage());
-            }
+            sendError(clientChannel, 400, "Неизвестная команда: " + command_name);
             return 404;
+        }
+    }
+
+    private void sendError(SocketChannel clientChannel, int code, String message) {
+        try {
+            ResponsePacket packet = new ResponsePacket(
+                    code,
+                    message,
+                    null
+            );
+
+            writeModule.writeResponseForClient(clientChannel, packet);
+        } catch (IOException e) {
+            ServerLogger.error("Ошибка отправки ответа: {}", e.getMessage());
         }
     }
 }

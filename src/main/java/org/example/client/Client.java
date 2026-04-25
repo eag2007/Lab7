@@ -193,7 +193,6 @@ public class Client {
         } catch (NoSuchElementException e) {
             throw new RuntimeException("EOF");
         } catch (Exception e) {
-            System.out.println(e.getClass());
             managerInputOutput.writeLineIO("Ошибка: " + e.getMessage() + "\n", Colors.RED);
             return false;
         }
@@ -202,8 +201,7 @@ public class Client {
     public static void setAccount() {
         account = false;
 
-        managerInputOutput.writeLineIO("Вы отключились от сервера\n");
-        managerInputOutput.writeLineIO("Вы вышли из аккаунта " + getLogin() + "\n");
+        managerInputOutput.writeLineIO("Вы вышли из аккаунта " + getLogin() + "\n", Colors.GREEN);
         login = null;
         password_hash = null;
     }
