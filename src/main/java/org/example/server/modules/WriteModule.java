@@ -39,15 +39,19 @@ public class WriteModule {
         ByteBuffer sizeBuffer = ByteBuffer.allocate(8);
         sizeBuffer.putLong(compressedData.length);
         sizeBuffer.flip();
-        client.write(sizeBuffer);
+        while (sizeBuffer.hasRemaining()) {
+            client.write(sizeBuffer);
+        }
 
         /**
          * Отправляем сжатые данные
          */
 
         ByteBuffer buffer = ByteBuffer.wrap(compressedData);
-        client.write(buffer);
+        while (buffer.hasRemaining()) {
+            client.write(buffer);
+        }
 
         ServerLogger.debug("Данные отправлены с кодом {} клиенту {}", response.getStatusCode(), client.getRemoteAddress());
     }
-}
+}   

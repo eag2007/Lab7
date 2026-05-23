@@ -130,7 +130,7 @@ public class Login implements Command {
             ServerLogger.error("Ошибка БД при входе: {}", e.getMessage());
             ResponsePacket response = new ResponsePacket(
                     500,
-                    "Ошибка входа: " + e.getMessage(),
+                    "Ошибка входа: ",
                     null
             );
 
