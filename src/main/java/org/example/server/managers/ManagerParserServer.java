@@ -33,6 +33,9 @@ public class ManagerParserServer {
         this.commands.put("update", new Update());
         this.commands.put("register", new Register());
         this.commands.put("login", new Login());
+        this.commands.put("see", new See());
+        this.commands.put("task_status", new TaskStatus());
+        this.commands.put("generate_data", new GenerateData());
     }
 
     public Codes parserCommand(CommandPacket commandPacket, SocketChannel clientChannel) {
