@@ -54,7 +54,6 @@ public class RemoveById implements Command {
                 return false;
             }
         }
-        managerInputOutput.writeLineIO("Неправильное количество аргументов\n", Colors.RED);
         return false;
     }
 

@@ -19,7 +19,7 @@ public class RemoveAllByDistance implements Command {
         try {
             int distance = Integer.parseInt(args[0]);
 
-            managerDataBase.deleteDistanceDB(distance, login);
+            managerDataBase.deleteRouteDistanceInDB(distance, login);
 
             long removedCount = managerCollections.getCollectionsRoute().stream()
                     .filter(route -> route.getDistance() == distance && route.getAuthor().equals(login))
@@ -31,45 +31,24 @@ public class RemoveAllByDistance implements Command {
 
             managerCollections.removeAllByDistanceCollections(routesNew);
 
-            ResponsePacket response = new ResponsePacket(
+            Server.writeExecutor(
                     200,
                     "Удалено элементов: " + removedCount,
-                    null
+                    null,
+                    clientChannel
             );
-
-
-            ///  ОБРАБОТКА  ЗАПИСИ
-            Server.getWrite().submit(() -> {
-                try {
-                    writeModule.writeResponseForClient(clientChannel, response);
-                } catch (IOException e) {
-                    ServerLogger.error("Ошибка отправки {}", e.getMessage());
-                }
-            });
-            /// ОБРАБОТКА ЗАПИСИ
-
 
             return 200;
 
         } catch (Exception e) {
             try {
-                ResponsePacket error = new ResponsePacket(
+
+                Server.writeExecutor(
                         500,
                         "Ошибка: " + e.getMessage(),
-                        null
+                        null,
+                        clientChannel
                 );
-
-
-                ///  ОБРАБОТКА  ЗАПИСИ
-                Server.getWrite().submit(() -> {
-                    try {
-                        writeModule.writeResponseForClient(clientChannel, error);
-                    } catch (IOException ex) {
-                        ServerLogger.error("Ошибка отправки {}", ex.getMessage());
-                    }
-                });
-                /// ОБРАБОТКА ЗАПИСИ
-
 
             } catch (Exception ex) {
                 ServerLogger.error("Ошибка создания ResponsePacket remove_all_by_distance");

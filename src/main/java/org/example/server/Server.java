@@ -1,6 +1,7 @@
 package org.example.server;
 
 import org.example.packet.CommandPacket;
+import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Route;
 import org.example.server.logger.ServerLogger;
 import org.example.server.managers.ManagerCollections;
@@ -36,7 +37,7 @@ public class Server {
         try {
             ServerLogger.info("Запуск сервера");
 
-            PriorityQueue<Route> routesDB = managerDataBase.getRoutesDB();
+            PriorityQueue<Route> routesDB = managerDataBase.getRoutesInDB();
             managerCollections.loadAllRoutes(routesDB);
             ServerLogger.info("Загружено элементов {} из БД", managerCollections.getSizeCollections());
 
@@ -200,5 +201,23 @@ public class Server {
 
     public static ExecutorService getWrite() {
         return WRITE;
+    }
+
+    public static void writeExecutor(int status_code, String message, Object data, SocketChannel clientChannel) {
+        ResponsePacket response = new ResponsePacket(
+                status_code,
+                message,
+                data
+        );
+
+        /// ОБРАБОТКА ЗАПИСИ
+        getWrite().submit(() -> {
+            try {
+                writeModule.writeResponseForClient(clientChannel, response);
+            } catch (IOException e) {
+                ServerLogger.error("Ошибка отправки {}", e.getMessage());
+            }
+        });
+        /// ОБРАБОТКА ЗАПИСИ
     }
 }

@@ -63,7 +63,7 @@ public class RemoveFirst implements Command {
 
             long id = route.getId();
 
-            long deletedId = managerDataBase.deleteDB(id);
+            long deletedId = managerDataBase.deleteRouteInDB(id);
 
             if (deletedId == 0) {
                 ResponsePacket response = new ResponsePacket(
@@ -106,6 +106,16 @@ public class RemoveFirst implements Command {
                 /// ОБРАБОТКА ЗАПИСИ
 
 
+                return 500;
+            }
+
+            if (id == -3) {
+                Server.writeExecutor(
+                        500,
+                        "База данных на сервере недоступна",
+                        null,
+                        clientChannel
+                );
                 return 500;
             }
 

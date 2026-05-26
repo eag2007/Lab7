@@ -140,7 +140,7 @@ public class ManagerDataBase {
 
     }
 
-    public synchronized long addDB(RouteClient routeClient, String author) {
+    public synchronized long addRouteInDB(RouteClient routeClient, String author) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return -3;
@@ -188,7 +188,7 @@ public class ManagerDataBase {
         }
     }
 
-    public synchronized boolean updateDB(Route route, String author) {
+    public synchronized boolean updateRouteInDB(Route route, String author) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return false;
@@ -242,7 +242,7 @@ public class ManagerDataBase {
         }
     }
 
-    public synchronized long deleteDB(long id) {
+    public synchronized long deleteRouteInDB(long id) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return -3;
@@ -272,7 +272,7 @@ public class ManagerDataBase {
         }
     }
 
-    public Route getDB(long id, String login) {
+    public Route getRouteInDB(long id, String login) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return null;
@@ -311,7 +311,7 @@ public class ManagerDataBase {
         }
     }
 
-    public synchronized int clearDB(String author) {
+    public synchronized int clearRoutesInDB(String author) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return -3;
@@ -333,7 +333,7 @@ public class ManagerDataBase {
         }
     }
 
-    public PriorityQueue<Route> getRoutesDB() {
+    public PriorityQueue<Route> getRoutesInDB() {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return new PriorityQueue<Route>();
@@ -366,7 +366,7 @@ public class ManagerDataBase {
         return routes;
     }
 
-    public synchronized int deleteDistanceDB(int distance, String author) {
+    public synchronized int deleteRouteDistanceInDB(int distance, String author) {
         if (connection == null) {
             ServerLogger.error("Нет подключения к БД");
             return -3;
@@ -389,7 +389,7 @@ public class ManagerDataBase {
         }
     }
 
-    public synchronized boolean checkUserPassword(String login, String password) {
+    public synchronized boolean checkUserPasswordInDB(String login, String password) {
         if (!repeatConnect()) {
             ServerLogger.error("БД недоступна. Проверка пароля пропущена.");
             return false;

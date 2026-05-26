@@ -2,6 +2,7 @@ package org.example.server.managers;
 
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
+import org.example.server.Server;
 import org.example.server.commands.*;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -39,6 +40,7 @@ public class ManagerParserServer {
         String login = commandPacket.getLogin();
         String password = commandPacket.getPassword();
 
+        System.out.println(commandPacket.getType());
         if (!command_name.equals("login") && !command_name.equals("register")) {
 
             if (!managerDataBase.repeatConnect()) {
@@ -79,16 +81,12 @@ public class ManagerParserServer {
     }
 
     private void sendError(SocketChannel clientChannel, int code, String message) {
-        try {
-            ResponsePacket packet = new ResponsePacket(
-                    code,
-                    message,
-                    null
-            );
+        Server.writeExecutor(
+                code,
+                message,
+                null,
+                clientChannel
+        );
 
-            writeModule.writeResponseForClient(clientChannel, packet);
-        } catch (IOException e) {
-            ServerLogger.error("Ошибка отправки ответа: {}", e.getMessage());
-        }
     }
 }

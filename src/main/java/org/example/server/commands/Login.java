@@ -1,42 +1,29 @@
 package org.example.server.commands;
 
-import org.example.packet.ResponsePacket;
 import org.example.packet.collection.RouteClient;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
 import org.example.server.managers.ManagerHasher;
 
-import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.sql.*;
 
-import static org.example.server.Server.writeModule;
 
 public class Login implements Command {
-    public int executeCommand(String[] args, RouteClient values, SocketChannel client, String login, String password) {
+    public int executeCommand(String[] args, RouteClient values, SocketChannel clientChannel, String login, String password) {
         try {
 
 
             Connection conn = Server.managerDataBase.getConnection();
             if (conn == null) {
 
-                ResponsePacket responsePacket = new ResponsePacket(
+                Server.writeExecutor(
                         500,
                         "База данных временно недоступна",
-                        null
+                        null,
+                        clientChannel
                 );
-
-
-                /// ОБРАБОТКА ЗАПИСИ
-                Server.getWrite().submit(() -> {
-                    try {
-                        writeModule.writeResponseForClient(client,
-                                new ResponsePacket(500, "База данных временно недоступна", null));
-                    } catch (Exception ignored) {}
-                });
-                /// ОБРАБОТКА ЗАПИСИ
-
 
                 return 500;
             }
@@ -56,95 +43,48 @@ public class Login implements Command {
 
                 if (passwordHash.equals(inputHash)) {
 
-                    ResponsePacket response = new ResponsePacket(
+                    Server.writeExecutor(
                             200,
                             "Успешно вошли в аккаунт",
-                            null
+                            null,
+                            clientChannel
                     );
-
-                    ServerLogger.info("Успешный вход: {}", login);
-
-
-                    ///  ОБРАБОТКА  ЗАПИСИ
-                    Server.getWrite().submit(() -> {
-                        try {
-                            writeModule.writeResponseForClient(client, response);
-                        } catch (IOException e) {
-                            ServerLogger.error("Ошибка отправки {}", e.getMessage());
-                        }
-                    });
-                    /// ОБРАБОТКА ЗАПИСИ
-
 
                     return 200;
                 } else {
 
-                    ResponsePacket response = new ResponsePacket(
+                    Server.writeExecutor(
                             400,
                             "Неверный пароль",
-                            null
+                            null,
+                            clientChannel
                     );
 
                     ServerLogger.info("Неверный пароль: {}", login);
-
-
-                    ///  ОБРАБОТКА  ЗАПИСИ
-                    Server.getWrite().submit(() -> {
-                        try {
-                            writeModule.writeResponseForClient(client, response);
-                        } catch (IOException e) {
-                            ServerLogger.error("Ошибка отправки {}", e.getMessage());
-                        }
-                    });
-                    /// ОБРАБОТКА ЗАПИСИ
-
 
                     return 400;
                 }
             } else {
 
-                ResponsePacket response = new ResponsePacket(
+                Server.writeExecutor(
                         400,
                         "Пользователь не найден",
-                        null
+                        null,
+                        clientChannel
                 );
-
-                ServerLogger.info("Пользователь не найден: {}", login);
-
-
-                ///  ОБРАБОТКА  ЗАПИСИ
-                Server.getWrite().submit(() -> {
-                    try {
-                        writeModule.writeResponseForClient(client, response);
-                    } catch (IOException e) {
-                        ServerLogger.error("Ошибка отправки {}", e.getMessage());
-                    }
-                });
-                /// ОБРАБОТКА ЗАПИСИ
-
 
                 return 400;
             }
 
         } catch (SQLException e) {
             ServerLogger.error("Ошибка БД при входе: {}", e.getMessage());
-            ResponsePacket response = new ResponsePacket(
+
+            Server.writeExecutor(
                     500,
-                    "Ошибка входа: ",
-                    null
+                    "Ошибка входа",
+                    null,
+                    clientChannel
             );
-
-
-            ///  ОБРАБОТКА  ЗАПИСИ
-            Server.getWrite().submit(() -> {
-                try {
-                    writeModule.writeResponseForClient(client, response);
-                } catch (IOException ex) {
-                    ServerLogger.error("Ошибка отправки {}", ex.getMessage());
-                }
-            });
-            /// ОБРАБОТКА ЗАПИСИ
-
 
             return 500;
         }
