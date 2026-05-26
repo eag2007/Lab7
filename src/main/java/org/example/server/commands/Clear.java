@@ -1,6 +1,7 @@
 package org.example.server.commands;
 
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -10,7 +11,7 @@ import java.nio.channels.SocketChannel;
 import static org.example.server.Server.*;
 
 public class Clear implements Command {
-    public int executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String passsword) {
+    public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String passsword) {
         try {
             managerCollections.clearCollections(login);
             int flag = managerDataBase.clearRoutesInDB(login);
@@ -18,39 +19,39 @@ public class Clear implements Command {
             if (flag >= 0) {
 
                 Server.writeExecutor(
-                        200,
+                        Codes.OK,
                         "Коллекция очищена",
                         null,
                         clientChannel
                 );
 
-                return 200;
+                return Codes.OK;
             }
 
             if (flag == -3) {
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "База данных на сервере недоступна",
                         null,
                         clientChannel
                 );
-                return 500;
+                return Codes.ERROR;
             }
 
             Server.writeExecutor(
-                    400,
+                    Codes.WARNING,
                     "Коллекция очистилась но сохранилась в БД",
                     null,
                     clientChannel
             );
 
-            return 400;
+            return Codes.WARNING;
 
         } catch (Exception e) {
             try {
 
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "Ошибка: " + e.getMessage(),
                         null,
                         clientChannel
@@ -59,7 +60,7 @@ public class Clear implements Command {
             } catch (Exception ex) {
                 ServerLogger.error("Ошибка создания ResponsePacket clear");
             }
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

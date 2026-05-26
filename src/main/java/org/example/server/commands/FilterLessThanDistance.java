@@ -2,6 +2,7 @@ package org.example.server.commands;
 
 import org.example.packet.collection.Route;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -14,7 +15,7 @@ import java.util.stream.Collectors;
 import static org.example.server.Server.managerCollections;
 
 public class FilterLessThanDistance implements Command {
-    public int executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
+    public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         try {
             int distance = Integer.parseInt(args[0]);
 
@@ -25,35 +26,35 @@ public class FilterLessThanDistance implements Command {
             if (result.isEmpty()) {
 
                 Server.writeExecutor(
-                        400,
+                        Codes.WARNING,
                         "Нет элементов с distance меньше " + distance,
                         result,
                         clientChannel
                 );
 
-                return 400;
+                return Codes.WARNING;
             }
 
             Server.writeExecutor(
-                    200,
+                    Codes.OK,
                     "Найдено элементов: " + result.size(),
                     result,
                     clientChannel
             );
 
-            return 200;
+            return Codes.OK;
 
         } catch (Exception e) {
             ServerLogger.error("Ошибка: {}", e.getMessage());
 
             Server.writeExecutor(
-                    500,
+                    Codes.ERROR,
                     "Ошибка: " + e.getMessage(),
                     null,
                     clientChannel
             );
 
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

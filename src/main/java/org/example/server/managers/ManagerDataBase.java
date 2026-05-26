@@ -141,7 +141,7 @@ public class ManagerDataBase {
     }
 
     public synchronized long addRouteInDB(RouteClient routeClient, String author) {
-        if (connection == null) {
+        if (!repeatConnect()) {
             ServerLogger.error("Нет подключения к БД");
             return -3;
         }
@@ -183,6 +183,9 @@ public class ManagerDataBase {
             return -1;
 
         } catch (SQLException e) {
+            if (e.getSQLState() != null && e.getSQLState().startsWith("08")) {
+                return -3;
+            }
             ServerLogger.error("Ошибка при sql запросе: {}", e.getMessage());
             return -1;
         }
@@ -442,9 +445,8 @@ public class ManagerDataBase {
             if (!connection.isValid(3)) {
                 ServerLogger.debug("Соединение невалидно, переподключаюсь...");
                 connectDB();
-                return true;
             }
-            return true;
+            return connection != null && !connection.isClosed() && connection.isValid(2);
         } catch (SQLException e) {
             ServerLogger.error("Не удалось проверить/восстановить соединение: {}", e.getMessage());
             try {

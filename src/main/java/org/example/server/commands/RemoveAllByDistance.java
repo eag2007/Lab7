@@ -1,13 +1,12 @@
 package org.example.server.commands;
 
 import org.example.packet.collection.Route;
-import org.example.packet.ResponsePacket;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
 
-import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.PriorityQueue;
 import java.util.stream.Collectors;
@@ -15,7 +14,7 @@ import java.util.stream.Collectors;
 import static org.example.server.Server.*;
 
 public class RemoveAllByDistance implements Command {
-    public int executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
+    public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         try {
             int distance = Integer.parseInt(args[0]);
 
@@ -32,19 +31,19 @@ public class RemoveAllByDistance implements Command {
             managerCollections.removeAllByDistanceCollections(routesNew);
 
             Server.writeExecutor(
-                    200,
+                    Codes.OK,
                     "Удалено элементов: " + removedCount,
                     null,
                     clientChannel
             );
 
-            return 200;
+            return Codes.OK;
 
         } catch (Exception e) {
             try {
 
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "Ошибка: " + e.getMessage(),
                         null,
                         clientChannel
@@ -53,7 +52,7 @@ public class RemoveAllByDistance implements Command {
             } catch (Exception ex) {
                 ServerLogger.error("Ошибка создания ResponsePacket remove_all_by_distance");
             }
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

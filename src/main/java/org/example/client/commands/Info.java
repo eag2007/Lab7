@@ -6,6 +6,7 @@ import org.example.client.interfaces.Command;
 import org.example.client.managers.ManagerSerialize;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
+import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,7 +26,7 @@ public class Info implements Command {
                 ResponsePacket response = readModule.readResponseForClient(serverChannel);
 
                 if (response != null) {
-                    if (response.getStatusCode() == 200) {
+                    if (response.getStatusCode() == Codes.OK) {
                         Map<String, Object> info = (Map<String, Object>) response.getData();
                         managerInputOutput.writeLineIO("Количество элементов: " + info.get("size") + "\n");
                         managerInputOutput.writeLineIO("Время инициализации: " + info.get("initTime") + "\n");

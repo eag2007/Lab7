@@ -1,6 +1,7 @@
 package org.example.server.commands;
 
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -11,7 +12,7 @@ import java.sql.*;
 
 
 public class Login implements Command {
-    public int executeCommand(String[] args, RouteClient values, SocketChannel clientChannel, String login, String password) {
+    public Codes executeCommand(String[] args, RouteClient values, SocketChannel clientChannel, String login, String password) {
         try {
 
 
@@ -19,13 +20,13 @@ public class Login implements Command {
             if (conn == null) {
 
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "База данных временно недоступна",
                         null,
                         clientChannel
                 );
 
-                return 500;
+                return Codes.ERROR;
             }
 
             PreparedStatement pstmt = conn.prepareStatement(
@@ -44,17 +45,17 @@ public class Login implements Command {
                 if (passwordHash.equals(inputHash)) {
 
                     Server.writeExecutor(
-                            200,
+                            Codes.OK,
                             "Успешно вошли в аккаунт",
                             null,
                             clientChannel
                     );
 
-                    return 200;
+                    return Codes.OK;
                 } else {
 
                     Server.writeExecutor(
-                            400,
+                            Codes.WARNING,
                             "Неверный пароль",
                             null,
                             clientChannel
@@ -62,31 +63,31 @@ public class Login implements Command {
 
                     ServerLogger.info("Неверный пароль: {}", login);
 
-                    return 400;
+                    return Codes.WARNING;
                 }
             } else {
 
                 Server.writeExecutor(
-                        400,
+                        Codes.WARNING,
                         "Пользователь не найден",
                         null,
                         clientChannel
                 );
 
-                return 400;
+                return Codes.WARNING;
             }
 
         } catch (SQLException e) {
             ServerLogger.error("Ошибка БД при входе: {}", e.getMessage());
 
             Server.writeExecutor(
-                    500,
+                    Codes.ERROR,
                     "Ошибка входа",
                     null,
                     clientChannel
             );
 
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

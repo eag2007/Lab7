@@ -6,6 +6,7 @@ import org.example.client.interfaces.Command;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Route;
+import org.example.packet.enums.Codes;
 
 import java.nio.channels.SocketChannel;
 import java.util.List;
@@ -28,7 +29,7 @@ public class Show implements Command {
             ResponsePacket response = readModule.readResponseForClient(serverChannel);
 
             if (response != null) {
-                if (response.getStatusCode() == 200) {
+                if (response.getStatusCode() == Codes.OK) {
                     List<Route> routes = (List<Route>) response.getData();
 
                     if (routes.isEmpty()) {

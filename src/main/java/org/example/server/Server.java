@@ -3,6 +3,7 @@ package org.example.server;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Route;
+import org.example.packet.enums.Codes;
 import org.example.server.logger.ServerLogger;
 import org.example.server.managers.ManagerCollections;
 import org.example.server.managers.ManagerDataBase;
@@ -92,7 +93,7 @@ public class Server {
 
                                 /// ОБРАБОТКА КОМАНД
                                 PROCESS.submit(() -> {
-                                    int code = managerParserServer.parserCommand(packet, client);
+                                    Codes code = managerParserServer.parserCommand(packet, client);
                                     try {
                                         ServerLogger.info("Код выполнения команды {} от {}", code, client.getRemoteAddress());
                                     } catch (IOException e) {
@@ -203,7 +204,7 @@ public class Server {
         return WRITE;
     }
 
-    public static void writeExecutor(int status_code, String message, Object data, SocketChannel clientChannel) {
+    public static void writeExecutor(Codes status_code, String message, Object data, SocketChannel clientChannel) {
         ResponsePacket response = new ResponsePacket(
                 status_code,
                 message,

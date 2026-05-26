@@ -2,6 +2,7 @@ package org.example.server.managers;
 
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.commands.*;
 import org.example.server.interfaces.Command;
@@ -12,7 +13,6 @@ import java.nio.channels.SocketChannel;
 import java.util.*;
 
 import static org.example.server.Server.managerDataBase;
-import static org.example.server.Server.writeModule;
 
 public class ManagerParserServer {
     private final HashMap<String, Command> commands;
@@ -35,7 +35,7 @@ public class ManagerParserServer {
         this.commands.put("login", new Login());
     }
 
-    public int parserCommand(CommandPacket commandPacket, SocketChannel clientChannel) {
+    public Codes parserCommand(CommandPacket commandPacket, SocketChannel clientChannel) {
         String command_name = commandPacket.getType();
         String login = commandPacket.getLogin();
         String password = commandPacket.getPassword();
@@ -44,16 +44,21 @@ public class ManagerParserServer {
         if (!command_name.equals("login") && !command_name.equals("register")) {
 
             if (!managerDataBase.repeatConnect()) {
-                sendError(clientChannel, 400, "База данных временно недоступна. Попробуйте позже");
+                sendError(clientChannel, Codes.WARNING, "База данных временно недоступна. Попробуйте позже");
                 ServerLogger.debug("БД недоступна при выполнении команды {} от {}", command_name, login);
-                return 400;
+                return Codes.WARNING;
             }
 
-            if (!managerDataBase.checkUserPassword(login, password)) {
+            if (!managerDataBase.checkUserPasswordInDB(login, password)) {
                 ServerLogger.info("ПОПЫТКА ВЗЛОМА под логином пользователя {}", login);
 
-                sendError(clientChannel, 500, "За вашим поведением начнут следить");
-                return 500;
+                if (!managerDataBase.repeatConnect()) {
+                    sendError(clientChannel, Codes.WARNING, "База данных временна недоступна. Попробуйте позже");
+                } else {
+
+                    sendError(clientChannel, Codes.ERROR, "За вашим поведением начнут следить");
+                }
+                return Codes.ERROR;
             }
         }
 
@@ -61,7 +66,7 @@ public class ManagerParserServer {
             Command command = this.commands.get(command_name);
 
             try {
-                int code = command.executeCommand(
+                Codes code = command.executeCommand(
                         commandPacket.getArgs(),
                         commandPacket.getValues(),
                         clientChannel,
@@ -72,15 +77,15 @@ public class ManagerParserServer {
                 return code;
             } catch (IOException e) {
                 ServerLogger.error("Ошибка выполнения команды {}: {}", command_name, e.getMessage());
-                return 500;
+                return Codes.ERROR;
             }
         } else {
-            sendError(clientChannel, 400, "Неизвестная команда: " + command_name);
-            return 404;
+            sendError(clientChannel, Codes.WARNING, "Неизвестная команда: " + command_name);
+            return Codes.WARNING;
         }
     }
 
-    private void sendError(SocketChannel clientChannel, int code, String message) {
+    private void sendError(SocketChannel clientChannel, Codes code, String message) {
         Server.writeExecutor(
                 code,
                 message,

@@ -1,11 +1,10 @@
 plugins {
     id 'java'
     id 'application'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.21'
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
 }
 
 group = 'org.example'
@@ -20,6 +19,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-core:2.22.1'
     implementation 'org.apache.logging.log4j:log4j-api:2.22.1'
     implementation 'org.postgresql:postgresql:42.7.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
 tasks.withType(Jar) {
@@ -66,4 +66,7 @@ task buildAll {
 
 tasks.withType(JavaExec) {
     jvmArgs += '--enable-native-access=ALL-UNNAMED'
+}
+kotlin {
+    jvmToolchain(17)
 }

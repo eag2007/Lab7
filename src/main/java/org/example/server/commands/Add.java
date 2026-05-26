@@ -2,6 +2,7 @@ package org.example.server.commands;
 
 import org.example.packet.collection.Route;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -11,30 +12,30 @@ import java.nio.channels.SocketChannel;
 import static org.example.server.Server.*;
 
 public class Add implements Command {
-    public int executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
+    public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         try {
             long id = managerDataBase.addRouteInDB(value, login);
 
             if (id == -1) {
 
                 Server.writeExecutor(
-                        400,
+                        Codes.WARNING,
                         "Маршрут с таким именем уже существует",
                         null,
                         clientChannel
                 );
 
-                return 400;
+                return Codes.WARNING;
             }
 
             if (id == -3) {
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "База данных на сервере недоступна",
                         null,
                         clientChannel
                 );
-                return 500;
+                return Codes.ERROR;
             }
 
             Route route = managerDataBase.getRouteInDB(id, login);
@@ -43,24 +44,24 @@ public class Add implements Command {
             }
 
             Server.writeExecutor(
-                    200,
+                    Codes.OK,
                     "Объект добавлен в коллекцию с ID: " + id,
                     id,
                     clientChannel
             );
 
-            return 200;
+            return Codes.OK;
         } catch (Exception e) {
             ServerLogger.error("Ошибка добавления: {}", e.getMessage());
 
             Server.writeExecutor(
-                    500,
+                    Codes.ERROR,
                     "Ошибка добавления: " + e.getMessage(),
                     null,
                     clientChannel
             );
 
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

@@ -2,6 +2,7 @@ package org.example.server.commands;
 
 import org.example.packet.collection.Route;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -11,18 +12,18 @@ import java.nio.channels.SocketChannel;
 import static org.example.server.Server.managerCollections;
 
 public class AverageOfDistance implements Command {
-    public int executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
+    public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         try {
             if (managerCollections.getSizeCollections() == 0) {
 
                 Server.writeExecutor(
-                        400,
+                        Codes.WARNING,
                         "Коллекция пуста",
                         0.0,
                         clientChannel
                 );
 
-                return 400;
+                return Codes.WARNING;
             }
 
             double average = managerCollections.getCollectionsRoute().stream()
@@ -31,19 +32,19 @@ public class AverageOfDistance implements Command {
                     .orElse(0.0);
 
             Server.writeExecutor(
-                    200,
+                    Codes.OK,
                     "Среднее значение distance",
                     average,
                     clientChannel
             );
 
-            return 200;
+            return Codes.OK;
 
         } catch (Exception e) {
             try {
 
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "Ошибка: " + e.getMessage(),
                         null,
                         clientChannel
@@ -52,7 +53,7 @@ public class AverageOfDistance implements Command {
             } catch (Exception ex) {
                 ServerLogger.error("Ошибка создания ResponsePacket average_of_distance");
             }
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

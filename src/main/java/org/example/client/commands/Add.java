@@ -6,6 +6,7 @@ import org.example.client.interfaces.Command;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -26,12 +27,16 @@ public class Add implements Command {
                     ResponsePacket response = readModule.readResponseForClient(serverChannel);
 
                     if (response != null) {
-                        if (response.getStatusCode() == 200) {
+                        if (response.getStatusCode() == Codes.OK) {
                             managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.GREEN);
                         }
 
-                        if (response.getStatusCode() == 500) {
+                        if (response.getStatusCode() == Codes.ERROR) {
                             managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.RED);
+                        }
+
+                        if (response.getStatusCode() == Codes.WARNING) {
+                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.YELLOW);
                         }
                     } else {
                         managerInputOutput.writeLineIO("Сервер ничего не вернул\n", Colors.YELLOW);
@@ -58,13 +63,17 @@ public class Add implements Command {
 
                     ResponsePacket response = readModule.readResponseForClient(serverChannel);
                     if (response != null) {
-                        if (response.getStatusCode() == 200) {
+                        if (response.getStatusCode() == Codes.OK) {
                             managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + " ID:"
                                     + response.getData() + "\n", Colors.GREEN);
                         }
 
-                        if (response.getStatusCode() == 500) {
+                        if (response.getStatusCode() == Codes.ERROR) {
                             managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.RED);
+                        }
+
+                        if (response.getStatusCode() == Codes.WARNING) {
+                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.YELLOW);
                         }
                     } else {
                         managerInputOutput.writeLineIO("Сервер ничего не вернул\n", Colors.YELLOW);

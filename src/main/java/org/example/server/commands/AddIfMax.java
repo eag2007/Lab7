@@ -2,6 +2,7 @@ package org.example.server.commands;
 
 import org.example.packet.collection.Route;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
 import org.example.server.logger.ServerLogger;
@@ -12,18 +13,18 @@ import java.util.Comparator;
 import static org.example.server.Server.*;
 
 public class AddIfMax implements Command {
-    public int executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
+    public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         try {
             if (value == null) {
 
                 Server.writeExecutor(
-                        400,
+                        Codes.WARNING,
                         "Не переданы данные элемента",
                         null,
                         clientChannel
                 )
                 ;
-                return 400;
+                return Codes.WARNING;
             }
 
             if (!managerCollections.getCollectionsRoute().isEmpty()) {
@@ -45,13 +46,13 @@ public class AddIfMax implements Command {
                 if (maxRoute != null && tempRoute.compareTo(maxRoute) <= 0) {
 
                     Server.writeExecutor(
-                            400,
+                            Codes.WARNING,
                             "Элемент не добавлен (не превышает максимальный)",
                             null,
                             clientChannel
                     );
 
-                    return 400;
+                    return Codes.WARNING;
                 }
             }
 
@@ -60,24 +61,24 @@ public class AddIfMax implements Command {
             if (id == -3) {
 
                 Server.writeExecutor(
-                        500,
+                        Codes.ERROR,
                         "База данных на сервере недоступна",
                         null,
                         clientChannel
                 );
 
-                return 500;
+                return Codes.ERROR;
             }
             if (id == -1) {
 
                 Server.writeExecutor(
-                        400,
+                        Codes.WARNING,
                         "Маршрут с таким именем уже существует",
                         null,
                         clientChannel
                 );
 
-                return 400;
+                return Codes.WARNING;
             }
 
             Route newRoute = new Route(
@@ -93,25 +94,25 @@ public class AddIfMax implements Command {
             managerCollections.addCollections(newRoute);
 
             Server.writeExecutor(
-                    200,
+                    Codes.OK,
                     "Элемент добавлен с ID: " + id,
                     id,
                     clientChannel
             );
 
-            return 200;
+            return Codes.OK;
 
         } catch (Exception e) {
             ServerLogger.error("Ошибка при добавлении: {}", e.getMessage());
 
             Server.writeExecutor(
-                    500,
+                    Codes.ERROR,
                     "Ошибка: " + e.getMessage(),
                     null,
                     clientChannel
             );
 
-            return 500;
+            return Codes.ERROR;
         }
     }
 }

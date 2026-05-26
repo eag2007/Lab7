@@ -7,6 +7,7 @@ import org.example.client.managers.ManagerSerialize;
 import org.example.packet.collection.Route;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
+import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,7 +27,7 @@ public class FilterLessThanDistance implements Command {
                 ResponsePacket response = readModule.readResponseForClient(serverChannel);
 
                 if (response != null) {
-                    if (response.getStatusCode() == 200) {
+                    if (response.getStatusCode() == Codes.OK) {
                         List<Route> routes = (List<Route>) response.getData();
 
                         String header = String.format("%-3s | %-15s | %-3s | %-3s | %-6s | %-6s | %-4s | %-6s | %-6s | %-4s | %-5s | %-10s | %-10s",
@@ -42,7 +43,7 @@ public class FilterLessThanDistance implements Command {
                                     route.getTo().getX(), route.getTo().getY(), route.getTo().getZ(), route.getDistance(), route.getPrice());
                             managerInputOutput.writeLineIO(line + "\n");
                         }
-                    } else if (response.getStatusCode() == 400) {
+                    } else if (response.getStatusCode() == Codes.WARNING) {
                         managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.YELLOW);
                     } else {
                         managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.RED);

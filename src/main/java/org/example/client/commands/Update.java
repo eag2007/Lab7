@@ -7,6 +7,7 @@ import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Route;
 import org.example.packet.collection.RouteClient;
+import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -24,7 +25,7 @@ public class Update implements Command {
                 ResponsePacket response = readModule.readResponseForClient(serverChannel);
 
                 if (response != null) {
-                    if (response.getStatusCode() == 200) {
+                    if (response.getStatusCode() == Codes.OK) {
                         managerInputOutput.writeLineIO("Элемент найден, введите значения полей\n", Colors.GREEN);
 
                         Route existingRoute = (Route) response.getData();
@@ -57,9 +58,9 @@ public class Update implements Command {
                         response = readModule.readResponseForClient(serverChannel);
 
                         if (response != null) {
-                            if (response.getStatusCode() == 200) {
+                            if (response.getStatusCode() == Codes.OK) {
                                 managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.GREEN);
-                            } else if (response.getStatusCode() == 400) {
+                            } else if (response.getStatusCode() == Codes.WARNING) {
                                 managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.YELLOW);
                             } else {
                                 managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.RED);

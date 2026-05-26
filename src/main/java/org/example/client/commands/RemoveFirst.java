@@ -6,6 +6,7 @@ import org.example.client.interfaces.Command;
 import org.example.client.managers.ManagerSerialize;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
+import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,11 +25,11 @@ public class RemoveFirst implements Command {
                 ResponsePacket response = readModule.readResponseForClient(serverChannel);
 
                 if (response != null) {
-                    if (response.getStatusCode() == 200) {
+                    if (response.getStatusCode() == Codes.OK) {
                         managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.GREEN);
-                    } else if (response.getStatusCode() == 400) {
+                    } else if (response.getStatusCode() == Codes.WARNING) {
                         managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.YELLOW);
-                    } else if (response.getStatusCode() == 500) {
+                    } else if (response.getStatusCode() == Codes.ERROR) {
                         managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.RED);
                     }
                 }

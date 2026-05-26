@@ -7,6 +7,7 @@ import org.example.client.modules.ReadModule;
 import org.example.client.modules.WriteModule;
 import org.example.packet.CommandPacket;
 import org.example.packet.ResponsePacket;
+import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -154,7 +155,7 @@ public class Client {
 
                     ResponsePacket response = readModule.readResponseForClient(server);
 
-                    if (response != null && response.getStatusCode() == 200) {
+                    if (response != null && response.getStatusCode() == Codes.OK) {
                         Client.login = inputLogin;
                         Client.password_hash = inputPassword;
                         managerInputOutput.writeLineIO("Вы вошли в аккаунт\n", Colors.GREEN);
@@ -177,7 +178,7 @@ public class Client {
 
                     ResponsePacket response = readModule.readResponseForClient(server);
 
-                    if (response != null && response.getStatusCode() == 200) {
+                    if (response != null && response.getStatusCode() == Codes.OK) {
                         Client.login = inputLogin;
                         Client.password_hash = inputPassword;
                         managerInputOutput.writeLineIO("Вы вошли в аккаунт\n", Colors.GREEN);
