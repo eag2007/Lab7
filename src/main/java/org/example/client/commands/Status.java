@@ -13,7 +13,7 @@ public class Status implements Command {
         if (Client.getLogin() != null) {
             managerInputOutput.writeLineIO("Вы находитесь в аккаунте под логином: " + Client.getLogin() + "\n", Colors.BLUE);
         } else {
-            managerInputOutput.writeLineIO("Вы не находитесь в аккаунте");
+            managerInputOutput.writeLineIO("Вы не находитесь в аккаунте\n");
         }
     }
 

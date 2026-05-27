@@ -39,6 +39,7 @@ public class ManagerParserClient {
         this.commands.put("generate_data", new GenerateData());
         this.commands.put("see", new See());
         this.commands.put("task_status", new TaskStatus());
+        this.commands.put("subscribe", new Subscribe());
     }
 
     public List<String> getCommandNames() {

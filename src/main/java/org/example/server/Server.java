@@ -8,6 +8,7 @@ import org.example.server.logger.ServerLogger;
 import org.example.server.managers.ManagerCollections;
 import org.example.server.managers.ManagerDataBase;
 import org.example.server.managers.ManagerParserServer;
+import org.example.server.managers.ManagerPush;
 import org.example.server.modules.ConnectModule;
 import org.example.server.modules.ReadModule;
 import org.example.server.modules.WriteModule;
@@ -23,6 +24,7 @@ public class Server {
     public static ManagerCollections managerCollections = new ManagerCollections();
     public static ManagerParserServer managerParserServer = new ManagerParserServer();
     public static ManagerDataBase managerDataBase = ManagerDataBase.getInstance();
+    public static ManagerPush managerPush = new ManagerPush();
 
     public static ReadModule readModule = new ReadModule();
     public static WriteModule writeModule = new WriteModule();
