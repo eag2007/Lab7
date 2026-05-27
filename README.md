@@ -15,6 +15,9 @@
 - **Thread** - класс потоков
 - **AtomicReference<CompletableFuture<ResponsePacket>>** - для бронирования ответа для команды ```update```
 - **BlockingQueue<ResponsePacket>** - потокобезопасная очередь для хранения ответов сервера.
+- **JLINE** - библиотека для терминального ввода/вывода
+- **DriverManager** - упрощенное подключение к БД
+- **SocketChannel, ServerSocketChannel** - работа с неблокирующими TCP каналами
 
 ## Функциональность
 
