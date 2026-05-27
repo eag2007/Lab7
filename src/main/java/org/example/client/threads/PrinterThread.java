@@ -1,7 +1,6 @@
 package org.example.client.threads;
 
 import org.example.client.enums.Colors;
-import org.example.client.managers.ManagerResponseQueue;
 import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Route;
 import org.example.packet.enums.Codes;
