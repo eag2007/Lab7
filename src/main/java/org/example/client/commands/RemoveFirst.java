@@ -3,45 +3,24 @@ package org.example.client.commands;
 import org.example.client.Client;
 import org.example.client.enums.Colors;
 import org.example.client.interfaces.Command;
-import org.example.client.managers.ManagerSerialize;
 import org.example.packet.CommandPacket;
-import org.example.packet.ResponsePacket;
-import org.example.packet.enums.Codes;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
 import static org.example.client.Client.*;
 
 public class RemoveFirst implements Command {
     public void executeCommand(String[] args, SocketChannel serverChannel) {
+        if (!checkArgs(args)) {
+            managerInputOutput.writeLineIO("Неправильное количество аргументов или их тип\n", Colors.RED);
+            return;
+        }
         try {
-            if (checkArgs(args)) {
-                CommandPacket commandPacket = new CommandPacket("remove_first", null, null, Client.getLogin(), Client.getPassword_hash());
-
-                writeModule.writePacketForServer(serverChannel, commandPacket);
-
-                ResponsePacket response = readModule.readResponseForClient(serverChannel);
-
-                if (response != null) {
-                    if (response.getStatusCode() == Codes.OK) {
-                        managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.GREEN);
-                    } else if (response.getStatusCode() == Codes.WARNING) {
-                        managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.YELLOW);
-                    } else if (response.getStatusCode() == Codes.ERROR) {
-                        managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.RED);
-                    }
-                }
-            } else {
-                managerInputOutput.writeLineIO("Неправильное количество аргументов или их тип\n", Colors.RED);
-            }
+            writeModule.writePacketForServer(serverChannel,
+                    new CommandPacket("remove_first", null, null, Client.getLogin(), Client.getPassword_hash()));
         } catch (IOException e) {
-            managerInputOutput.writeLineIO("Ошибка сериализации или десериализации\n", Colors.RED);
-        } catch (ClassNotFoundException e) {
-            managerInputOutput.writeLineIO("Ошибка в преобразовании в ResponsePacket\n", Colors.RED);
-        } catch (Exception e) {
-            managerInputOutput.writeLineIO("Ошибка " + e.getMessage() + "\n", Colors.RED);
+            managerInputOutput.writeLineIO("Ошибка отправки: " + e.getMessage() + "\n", Colors.RED);
         }
     }
 
@@ -51,6 +30,6 @@ public class RemoveFirst implements Command {
 
     @Override
     public String toString() {
-        return "remove_first - удаляет первый элемент коллекции";
+        return "remove_first";
     }
 }

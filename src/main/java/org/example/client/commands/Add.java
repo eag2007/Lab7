@@ -4,9 +4,7 @@ import org.example.client.Client;
 import org.example.client.enums.Colors;
 import org.example.client.interfaces.Command;
 import org.example.packet.CommandPacket;
-import org.example.packet.ResponsePacket;
 import org.example.packet.collection.RouteClient;
-import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -15,77 +13,25 @@ import static org.example.client.Client.*;
 
 public class Add implements Command {
     public void executeCommand(String[] args, SocketChannel serverChannel) {
-        if (checkArgs(args)) {
-            if (!managerInputOutput.isScriptMode()) {
-                RouteClient route = managerValidation.validateFromInput();
+        if (!checkArgs(args)) {
+            managerInputOutput.writeLineIO("Неправильное количество аргументов\n", Colors.RED);
+            return;
+        }
 
-                CommandPacket commandPacket = new CommandPacket("add", null, route, Client.getLogin(), Client.getPassword_hash());
+        RouteClient route = managerInputOutput.isScriptMode()
+                ? managerValidation.validateFromScript()
+                : managerValidation.validateFromInput();
 
-                try {
-                    writeModule.writePacketForServer(serverChannel, commandPacket);
+        if (route == null) {
+            managerInputOutput.writeLineIO("Объект не создан\n", Colors.RED);
+            return;
+        }
 
-                    ResponsePacket response = readModule.readResponseForClient(serverChannel);
-
-                    if (response != null) {
-                        if (response.getStatusCode() == Codes.OK) {
-                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.GREEN);
-                        }
-
-                        if (response.getStatusCode() == Codes.ERROR) {
-                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.RED);
-                        }
-
-                        if (response.getStatusCode() == Codes.WARNING) {
-                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.YELLOW);
-                        }
-                    } else {
-                        managerInputOutput.writeLineIO("Сервер ничего не вернул\n", Colors.YELLOW);
-                    }
-                } catch (IOException e) {
-                    managerInputOutput.writeLineIO("Ошибка формата\n", Colors.RED);
-                } catch (ClassNotFoundException e) {
-                    managerInputOutput.writeLineIO("Ошибка десириализации\n", Colors.RED);
-                } catch (Exception e) {
-                    managerInputOutput.writeLineIO("Ошибка: " + e.getMessage() + "\n", Colors.RED);
-                }
-            } else {
-                RouteClient route = managerValidation.validateFromScript();
-
-                if (route == null) {
-                    managerInputOutput.writeLineIO("Объект не создан\n", Colors.RED);
-                    return;
-                }
-
-                CommandPacket commandPacket = new CommandPacket("add", null, route, Client.getLogin(), Client.getPassword_hash());
-
-                try {
-                    writeModule.writePacketForServer(serverChannel, commandPacket);
-
-                    ResponsePacket response = readModule.readResponseForClient(serverChannel);
-                    if (response != null) {
-                        if (response.getStatusCode() == Codes.OK) {
-                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + " ID:"
-                                    + response.getData() + "\n", Colors.GREEN);
-                        }
-
-                        if (response.getStatusCode() == Codes.ERROR) {
-                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.RED);
-                        }
-
-                        if (response.getStatusCode() == Codes.WARNING) {
-                            managerInputOutput.writeLineIO("Сервер: " + response.getMessage() + "\n", Colors.YELLOW);
-                        }
-                    } else {
-                        managerInputOutput.writeLineIO("Сервер ничего не вернул\n", Colors.YELLOW);
-                    }
-                } catch (ClassNotFoundException e) {
-                    managerInputOutput.writeLineIO("Ошибка десириализации\n", Colors.RED);
-                } catch (Exception e) {
-                    managerInputOutput.writeLineIO("Ошибка: " + e.getMessage() + "\n", Colors.RED);
-                }
-            }
-        } else {
-            managerInputOutput.writeLineIO("Неправильное количество элементов\n", Colors.RED);
+        try {
+            writeModule.writePacketForServer(serverChannel,
+                    new CommandPacket("add", null, route, Client.getLogin(), Client.getPassword_hash()));
+        } catch (IOException e) {
+            managerInputOutput.writeLineIO("Ошибка отправки: " + e.getMessage() + "\n", Colors.RED);
         }
     }
 

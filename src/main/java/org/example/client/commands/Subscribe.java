@@ -1,10 +1,9 @@
 package org.example.client.commands;
 
+import org.example.client.Client;
 import org.example.client.enums.Colors;
 import org.example.client.interfaces.Command;
 import org.example.packet.CommandPacket;
-import org.example.packet.ResponsePacket;
-import org.example.packet.enums.Codes;
 
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
@@ -12,46 +11,25 @@ import java.nio.channels.SocketChannel;
 import static org.example.client.Client.*;
 
 public class Subscribe implements Command {
-    @Override
     public void executeCommand(String[] args, SocketChannel serverChannel) {
-        if (checkArgs(args)) {
-            CommandPacket packet = new CommandPacket(
-                    "subscribe",
-                    args,
-                    null,
-                    getLogin(),
-                    getPassword_hash()
-            );
-
-            try {
-                writeModule.writePacketForServer(serverChannel, packet);
-
-                ResponsePacket response = readModule.readResponseForClient(serverChannel);
-
-                if (response.getStatusCode() == Codes.OK) {
-                    managerInputOutput.writeLineIO(response.getMessage() + "\n", Colors.RED);
-                }
-
-            } catch (IOException e) {
-                managerInputOutput.writeLineIO("Не удалось отправить пакет\n");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            managerInputOutput.writeLineIO("Неверное количество аргументов или их тип");
+        if (!checkArgs(args)) {
+            managerInputOutput.writeLineIO("Неправильное количество аргументов или их тип\n", Colors.RED);
+            return;
+        }
+        try {
+            writeModule.writePacketForServer(serverChannel,
+                    new CommandPacket("subscribe", args, null, Client.getLogin(), Client.getPassword_hash()));
+        } catch (IOException e) {
+            managerInputOutput.writeLineIO("Ошибка отправки: " + e.getMessage() + "\n", Colors.RED);
         }
     }
 
     public boolean checkArgs(String[] args) {
-        if (args.length == 1 && (args[0].equals("true")) || args[0].equals("false")) {
-            return true;
-        }
-        return false;
+        return args.length == 1 && (args[0].equals("true") || args[0].equals("false"));
     }
 
     @Override
     public String toString() {
-        return "subscribe [true/false] - подписывает/отписывает пользователя от push-уведомлений";
+        return "subscribe";
     }
-
 }

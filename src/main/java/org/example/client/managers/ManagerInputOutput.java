@@ -48,7 +48,7 @@ public class ManagerInputOutput {
                     .completer(completer)
                     .build();
         } catch (Exception e) {
-            System.out.println("Ошибка при установке автодополнения: " + e.getMessage());
+            writeLineIO("Ошибка при установке автодополнения: " + e.getMessage());
         }
     }
 
@@ -65,7 +65,7 @@ public class ManagerInputOutput {
                     currentReader.close();
                 }
             } catch (IOException e) {
-                System.out.println("Ошибка при закрытии ридера: " + e.getMessage());
+                writeLineIO("Ошибка при закрытии ридера: " + e.getMessage());
             } finally {
                 readerStack.pop();
                 if (readerStack.isEmpty()) {
@@ -89,7 +89,7 @@ public class ManagerInputOutput {
             try {
                 String line = currentReader.readLine();
                 if (line != null) {
-                    System.out.println("[Значение из скрипта] " + line);
+                    writeLineIO("[Значение из скрипта] " + line + "\n");
                     return line;
                 } else {
                     popFileExecute();
@@ -114,11 +114,11 @@ public class ManagerInputOutput {
     }
 
     public void writeLineIO(String message) {
-        System.out.print(message);
+        lineReader.printAbove(message);
     }
 
     public void writeLineIO(String message, Colors color) {
-        System.out.print(color + message + "\u001B[0m");
+        lineReader.printAbove(color + message + "\u001B[0m");
     }
 
     public void closeIO() {
@@ -139,6 +139,6 @@ public class ManagerInputOutput {
         } catch (IOException e) {
             System.out.println("Ошибка при закрытии терминала: " + e.getMessage());
         }
-        writeLineIO("IO закрыт\n");
+        System.out.println("IO закрыт");
     }
 }
