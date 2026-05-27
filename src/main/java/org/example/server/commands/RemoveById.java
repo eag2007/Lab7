@@ -74,6 +74,8 @@ public class RemoveById implements Command {
                     clientChannel
             );
 
+            managerPush.sendPushToSubscribes("Удалён объект в коллекцию. Пользователем: " +  login);
+
             return Codes.OK;
 
         } catch (NumberFormatException e) {

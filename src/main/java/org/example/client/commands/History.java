@@ -14,14 +14,16 @@ public class History implements Command {
     public void executeCommand(String[] args, SocketChannel serverChannel) {
         if (checkArgs(args)) {
             List<String> historyCommands = managerParserClient.getHistoryCommands();
-            managerInputOutput.writeLineIO("Список последних 14 команд:\n");
-            managerInputOutput.writeLineIO("-----------------------\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Список последних 14 команд:\n");
+            sb.append("-----------------------\n");
             for (String cmd : historyCommands) {
-                managerInputOutput.writeLineIO(cmd + "\n");
+                sb.append(cmd).append("\n");
             }
-            managerInputOutput.writeLineIO("-----------------------\n");
+            sb.append("-----------------------");
+            managerInputOutput.writeLineIO(sb.toString());
         } else {
-            managerInputOutput.writeLineIO("Неверное количество аргументов\n", Colors.RED);
+            managerInputOutput.writeLineIO("Неверное количество аргументов", Colors.RED);
         }
     }
 

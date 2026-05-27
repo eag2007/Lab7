@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -35,6 +36,8 @@ public class Server {
     private static final ExecutorService READ = Executors.newCachedThreadPool();
     private static final ExecutorService PROCESS = Executors.newFixedThreadPool(10);
     private static final ExecutorService WRITE = Executors.newFixedThreadPool(8);
+
+    private static final ConcurrentHashMap<String, SocketChannel> loginToChannel = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
         try {
@@ -206,6 +209,10 @@ public class Server {
         return WRITE;
     }
 
+    public static ConcurrentHashMap<String, SocketChannel> getLoginToChannel() {
+        return loginToChannel;
+    }
+
     public static void writeExecutor(Codes status_code, String message, Object data, SocketChannel clientChannel) {
         ResponsePacket response = new ResponsePacket(
                 status_code,
@@ -222,5 +229,19 @@ public class Server {
             }
         });
         /// ОБРАБОТКА ЗАПИСИ
+    }
+
+    private static void removeClient(SocketChannel client) {
+        String login = loginToChannel.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(client))
+                .map(Map.Entry::getKey)
+                .findFirst()
+                .orElse(null);
+
+        if (login != null) {
+            loginToChannel.remove(login);
+            managerPush.deleteSubscribe(login, false);
+            ServerLogger.info("Клиент {} удален из активных", login);
+        }
     }
 }

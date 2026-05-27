@@ -89,6 +89,8 @@ public class RemoveFirst implements Command {
                     clientChannel
             );
 
+            managerPush.sendPushToSubscribes("Удалён первый объект в коллекции. Пользователем: " +  login);
+
             return Codes.OK;
 
         } catch (Exception e) {

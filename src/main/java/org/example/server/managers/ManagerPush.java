@@ -1,5 +1,9 @@
 package org.example.server.managers;
 
+import org.example.packet.enums.Codes;
+import org.example.server.Server;
+
+import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ManagerPush {
@@ -19,5 +23,23 @@ public class ManagerPush {
 
     public ConcurrentHashMap<String, Boolean> getUserSubscribes() {
         return new ConcurrentHashMap<>(userSubscribes);
+    }
+
+    public void sendPushToSubscribes(String message) {
+        if (userSubscribes.isEmpty()) {
+            return;
+        }
+
+        for (String login : userSubscribes.keySet()) {
+            SocketChannel channel = Server.getLoginToChannel().get(login);
+            if (channel != null && channel.isOpen()) {
+                Server.writeExecutor(
+                        Codes.PUSH,
+                        message,
+                        null,
+                        channel
+                );
+            }
+        }
     }
 }

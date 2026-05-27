@@ -79,6 +79,8 @@ public class AddIfMax implements Command {
                     clientChannel
             );
 
+            managerPush.sendPushToSubscribes("Добавлен новый объект в коллекцию. Пользователем: " +  login);
+
             return Codes.OK;
 
         } catch (RuntimeException e) {

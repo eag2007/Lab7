@@ -8,18 +8,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ResponseQueue {
+public class ManagerResponseQueue {
 
-    private static final ResponseQueue INSTANCE = new ResponseQueue();
+    private static final ManagerResponseQueue INSTANCE = new ManagerResponseQueue();
 
     private final BlockingQueue<ResponsePacket> queue = new LinkedBlockingQueue<>();
-
     private final AtomicReference<CompletableFuture<ResponsePacket>> pendingUpdate =
             new AtomicReference<>(null);
 
-    private ResponseQueue() {}
+    private ManagerResponseQueue() {
+    }
 
-    public static ResponseQueue getInstance() {
+    public static ManagerResponseQueue getInstance() {
         return INSTANCE;
     }
 
@@ -49,6 +49,8 @@ public class ResponseQueue {
 
     public void cancelExpected() {
         CompletableFuture<ResponsePacket> future = pendingUpdate.getAndSet(null);
-        if (future != null) future.cancel(false);
+        if (future != null) {
+            future.cancel(false);
+        }
     }
 }

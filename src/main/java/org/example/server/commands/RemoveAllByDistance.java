@@ -37,6 +37,8 @@ public class RemoveAllByDistance implements Command {
                     clientChannel
             );
 
+            managerPush.sendPushToSubscribes("Удалены объекты из коллекции. Пользователем: " +  login);
+
             return Codes.OK;
 
         } catch (Exception e) {

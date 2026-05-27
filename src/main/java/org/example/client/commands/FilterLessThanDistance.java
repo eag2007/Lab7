@@ -25,14 +25,20 @@ public class FilterLessThanDistance implements Command {
     }
 
     public boolean checkArgs(String[] args) {
-        if (args.length != 1) return false;
-        try { Integer.parseInt(args[0]); return true; }
-        catch (NumberFormatException e) {
+        if (args.length != 1) {
+            return false;
+        }
+        try {
+            Integer.parseInt(args[0]);
+            return true;
+        } catch (NumberFormatException e) {
             managerInputOutput.writeLineIO("Аргумент должен быть целым числом\n", Colors.RED);
             return false;
         }
     }
 
     @Override
-    public String toString() { return "filter_less_than_distance distance - элементы с distance меньше заданного"; }
+    public String toString() {
+        return "filter_less_than_distance distance - элементы с distance меньше заданного";
+    }
 }

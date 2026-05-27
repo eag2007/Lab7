@@ -54,6 +54,8 @@ public class Register implements Command {
 
             pstmt.executeUpdate();
 
+            Server.getLoginToChannel().put(login, clientChannel);
+
             Server.writeExecutor(
                     Codes.OK,
                     "Пользователь зарегистрирован",

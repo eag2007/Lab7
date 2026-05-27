@@ -25,6 +25,8 @@ public class Clear implements Command {
                         clientChannel
                 );
 
+                managerPush.sendPushToSubscribes("Коллекция очищена. Пользователем: " +  login);
+
                 return Codes.OK;
             }
 

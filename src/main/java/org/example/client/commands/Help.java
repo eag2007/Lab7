@@ -12,14 +12,16 @@ public class Help implements Command {
 
     public void executeCommand(String[] args, SocketChannel serverChannel) {
         if (checkArgs(args)) {
-            managerInputOutput.writeLineIO("Справка по командам:\n");
-            managerInputOutput.writeLineIO("------------------------------------------------------\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append("Справка по командам:\n");
+            sb.append("------------------------------------------------------\n");
             for (Command cmd : managerParserClient.getCommands()) {
-                managerInputOutput.writeLineIO(cmd + "\n");
+                sb.append(cmd).append("\n");
             }
-            managerInputOutput.writeLineIO("------------------------------------------------------\n");
+            sb.append("------------------------------------------------------");
+            managerInputOutput.writeLineIO(sb.toString());
         } else {
-            managerInputOutput.writeLineIO("Неверное количество аргументов\n", Colors.RED);
+            managerInputOutput.writeLineIO("Неверное количество аргументов", Colors.RED);
         }
     }
 

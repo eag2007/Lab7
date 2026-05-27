@@ -1,5 +1,6 @@
 package org.example.client.commands;
 
+import org.example.client.Client;
 import org.example.client.enums.Colors;
 import org.example.client.interfaces.Command;
 
@@ -14,6 +15,8 @@ public class Exit implements Command {
     public void executeCommand(String[] args, SocketChannel serverChannel) {
         try {
             if (checkArgs(args)) {
+                Client.stopBackgroundThreads();
+                    
                 managerInputOutput.closeIO();
                 managerInputOutput.writeLineIO("Завершение работы\n", Colors.GREEN);
                 server.close();

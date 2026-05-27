@@ -113,12 +113,35 @@ public class ManagerInputOutput {
         return readLineIO("");
     }
 
+    public String readPasswordIO(String prompt) {
+        if (!readerStack.isEmpty()) {
+            return readLineIO(prompt);
+        }
+
+        try {
+            return lineReader.readLine(prompt, '*');
+        } catch (UserInterruptException e) {
+            return "";
+        } catch (EndOfFileException e) {
+            throw new NoSuchElementException("EOF");
+        }
+    }
+
     public void writeLineIO(String message) {
-        lineReader.printAbove(message);
+        lineReader.printAbove(stripNewLine(message));
     }
 
     public void writeLineIO(String message, Colors color) {
-        lineReader.printAbove(color + message + "\u001B[0m");
+        lineReader.printAbove(color + stripNewLine(message) + "\u001B[0m");
+    }
+
+    private static String stripNewLine(String s) {
+        if (s == null)
+            return "";
+        int end = s.length();
+        while (end > 0 && s.charAt(end - 1) == '\n')
+            end--;
+        return s.substring(0, end);
     }
 
     public void closeIO() {

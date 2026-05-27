@@ -76,6 +76,8 @@ public class Update implements Command {
                     clientChannel
             );
 
+            managerPush.sendPushToSubscribes("Обновлён объект в коллекции. Пользователем: " +  login);
+
             return Codes.OK;
 
         } catch (NumberFormatException e) {

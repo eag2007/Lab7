@@ -20,6 +20,7 @@ public class Client {
     public static ManagerValidation managerValidation = new ManagerValidation();
     public static ManagerInputOutput managerInputOutput = ManagerInputOutput.getInstance();
     public static ManagerParserClient managerParserClient = new ManagerParserClient();
+    public static ManagerResponseQueue managerResponseQueue = ManagerResponseQueue.getInstance();
     public static SocketChannel server = null;
     public static ReadModule readModule = new ReadModule();
     public static WriteModule writeModule = new WriteModule();
@@ -27,6 +28,7 @@ public class Client {
     private static String login = null;
     private static String password_hash = null;
     private static boolean account = false;
+    private static int currentPort = 8080;
 
     private static ReaderThread readerThread = null;
     private static PrinterThread printerThread = null;
@@ -35,25 +37,19 @@ public class Client {
         try {
             managerInputOutput.setCommands(managerParserClient.getCommandNames());
 
-            int port;
             try {
-                port = Integer.parseInt(args[0]);
+                currentPort = Integer.parseInt(args[0]);
             } catch (Exception e) {
-                port = 8080;
+                currentPort = 8080;
                 managerInputOutput.writeLineIO("Порт по умолчанию\n", Colors.YELLOW);
             }
 
-            connect(port);
+            connect(currentPort);
 
             while (!account) {
                 account = authenticate();
             }
-
-            readerThread = new ReaderThread(server, readModule);
-            readerThread.start();
-
-            printerThread = new PrinterThread();
-            printerThread.start();
+            startBackgroundThreads();
 
             while (true) {
                 try {
@@ -61,27 +57,52 @@ public class Client {
                 } catch (IOException e) {
                     managerInputOutput.writeLineIO("Сервер умер\n", Colors.YELLOW);
                     stopBackgroundThreads();
-                    connect(port);
-                    account = false;
-                    while (!account) {
-                        account = authenticate();
+                    connect(currentPort);
+
+                    if (login != null && password_hash != null) {
+                        if (relogin()) {
+                            managerInputOutput.writeLineIO("Сессия восстановлена автоматически\n", Colors.GREEN);
+                        } else {
+                            managerInputOutput.writeLineIO("Не удалось восстановить сессию. Войдите заново.\n", Colors.YELLOW);
+                            account = false;
+                            login = null;
+                            password_hash = null;
+                            while (!account) {
+                                account = authenticate();
+                            }
+                        }
+                    } else {
+                        account = false;
+                        while (!account) {
+                            account = authenticate();
+                        }
                     }
-                    readerThread = new ReaderThread(server, readModule);
-                    readerThread.start();
-                    printerThread = new PrinterThread();
-                    printerThread.start();
+
+                    startBackgroundThreads();
                 }
 
                 String input = managerInputOutput.readLineIO("Введите команду : ");
-                if (input == null || input.isBlank()) continue;
+                if (input == null || input.isBlank()) {
+                    continue;
+                }
                 managerParserClient.parserCommand(input);
+
+                if (!account) {
+                    stopBackgroundThreads();
+                    closeServer();
+                    connect(currentPort);
+                    while (!account) {
+                        account = authenticate();
+                    }
+                    startBackgroundThreads();
+                }
             }
 
         } catch (NoSuchElementException e) {
             shutdown("Завершение работы");
         } catch (RuntimeException e) {
             if (e.getMessage() != null && e.getMessage().contains("EOF")) {
-                shutdown("Завершение работы");
+                shutdown("Экстренное завершение работы");
             } else {
                 managerInputOutput.writeLineIO("Ошибка во время работы программы\n", Colors.RED);
             }
@@ -90,7 +111,6 @@ public class Client {
             closeServer();
         }
     }
-
 
     private static void connect(int port) {
         boolean connected = false;
@@ -113,7 +133,29 @@ public class Client {
         }
     }
 
-    private static void stopBackgroundThreads() {
+    private static boolean relogin() {
+        try {
+            CommandPacket packet = new CommandPacket("login", null, null, login, password_hash);
+            writeModule.writePacketForServer(server, packet);
+            ResponsePacket response = readModule.readResponseForClient(server);
+            if (response != null && response.getStatusCode() == Codes.OK) {
+                account = true;
+                return true;
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private static void startBackgroundThreads() {
+        stopBackgroundThreads();
+        readerThread = new ReaderThread(server, readModule);
+        readerThread.start();
+        printerThread = new PrinterThread();
+        printerThread.start();
+    }
+
+    public static void stopBackgroundThreads() {
         if (readerThread != null) {
             readerThread.stopReader();
             readerThread = null;
@@ -128,7 +170,6 @@ public class Client {
         try {
             if (server != null && server.isOpen()) {
                 server.close();
-                managerInputOutput.writeLineIO("Соединение с сервером закрыто\n", Colors.GREEN);
             }
         } catch (IOException e) {
             managerInputOutput.writeLineIO("Проблема при разрыве соединения\n", Colors.YELLOW);
@@ -138,19 +179,24 @@ public class Client {
     private static void shutdown(String message) {
         managerInputOutput.writeLineIO(message + "\n", Colors.GREEN);
         managerInputOutput.closeIO();
+        stopBackgroundThreads();
         closeServer();
     }
 
-    public static String getLogin() { return login; }
+    public static String getLogin() {
+        return login;
+    }
 
-    public static String getPassword_hash() { return password_hash; }
+    public static String getPassword_hash() {
+        return password_hash;
+    }
 
     public static String enterLogin() {
         return managerInputOutput.readLineIO("Логин: ");
     }
 
     public static String enterPassword() {
-        return managerInputOutput.readLineIO("Пароль: ");
+        return managerInputOutput.readPasswordIO("Пароль: ");
     }
 
     public static void setAccount() {
@@ -169,17 +215,23 @@ public class Client {
                     String inputLogin = enterLogin().replaceAll("\\s++", " ").trim();
                     String inputPassword = enterPassword().replaceAll("\\s++", " ").trim();
 
-                    CommandPacket packet = new CommandPacket("login", null, null, inputLogin, inputPassword);
-                    writeModule.writePacketForServer(server, packet);
-                    ResponsePacket response = readModule.readResponseForClient(server);
+                    try {
+                        CommandPacket packet = new CommandPacket("login", null, null, inputLogin, inputPassword);
+                        writeModule.writePacketForServer(server, packet);
+                        ResponsePacket response = readModule.readResponseForClient(server);
 
-                    if (response != null && response.getStatusCode() == Codes.OK) {
-                        Client.login = inputLogin;
-                        Client.password_hash = inputPassword;
-                        managerInputOutput.writeLineIO("Вы вошли в аккаунт\n", Colors.GREEN);
-                        return true;
+                        if (response != null && response.getStatusCode() == Codes.OK) {
+                            Client.login = inputLogin;
+                            Client.password_hash = inputPassword;
+                            managerInputOutput.writeLineIO("Вы вошли в аккаунт\n", Colors.GREEN);
+                            return true;
+                        }
+                        managerInputOutput.writeLineIO("Ошибка входа: " + (response != null ? response.getMessage() : "нет ответа") + "\n", Colors.RED);
+                    } catch (Exception e) {
+                        managerInputOutput.writeLineIO("Соединение потеряно, переподключение...\n", Colors.YELLOW);
+                        closeServer();
+                        connect(currentPort);
                     }
-                    managerInputOutput.writeLineIO("Ошибка входа: " + (response != null ? response.getMessage() : "нет ответа") + "\n", Colors.RED);
 
                 } else if (data.equals("2")) {
                     String inputLogin = enterLogin().replaceAll("\\s++", " ").trim();
@@ -190,17 +242,23 @@ public class Client {
                         continue;
                     }
 
-                    CommandPacket packet = new CommandPacket("register", null, null, inputLogin, inputPassword);
-                    writeModule.writePacketForServer(server, packet);
-                    ResponsePacket response = readModule.readResponseForClient(server);
+                    try {
+                        CommandPacket packet = new CommandPacket("register", null, null, inputLogin, inputPassword);
+                        writeModule.writePacketForServer(server, packet);
+                        ResponsePacket response = readModule.readResponseForClient(server);
 
-                    if (response != null && response.getStatusCode() == Codes.OK) {
-                        Client.login = inputLogin;
-                        Client.password_hash = inputPassword;
-                        managerInputOutput.writeLineIO("Вы вошли в аккаунт\n", Colors.GREEN);
-                        return true;
+                        if (response != null && response.getStatusCode() == Codes.OK) {
+                            Client.login = inputLogin;
+                            Client.password_hash = inputPassword;
+                            managerInputOutput.writeLineIO("Вы зарегистрированы\n", Colors.GREEN);
+                            return true;
+                        }
+                        managerInputOutput.writeLineIO("Ошибка регистрации: " + (response != null ? response.getMessage() : "нет ответа") + "\n", Colors.RED);
+                    } catch (Exception e) {
+                        managerInputOutput.writeLineIO("Соединение потеряно, переподключение...\n", Colors.YELLOW);
+                        closeServer();
+                        connect(currentPort);
                     }
-                    managerInputOutput.writeLineIO("Ошибка регистрации: " + (response != null ? response.getMessage() : "нет ответа") + "\n", Colors.RED);
 
                 } else if (data.equals("3")) {
                     new Exit().executeCommand(new String[]{}, server);
@@ -209,9 +267,6 @@ public class Client {
             }
         } catch (NoSuchElementException e) {
             throw new RuntimeException("EOF");
-        } catch (Exception e) {
-            managerInputOutput.writeLineIO("Ошибка: " + e.getMessage() + "\n", Colors.RED);
-            return false;
         }
     }
 }

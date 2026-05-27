@@ -25,14 +25,20 @@ public class RemoveAllByDistance implements Command {
     }
 
     public boolean checkArgs(String[] args) {
-        if (args.length != 1) return false;
-        try { Integer.parseInt(args[0]); return true; }
-        catch (NumberFormatException e) {
+        if (args.length != 1) {
+            return false;
+        }
+        try {
+            Integer.parseInt(args[0]);
+            return true;
+        } catch (NumberFormatException e) {
             managerInputOutput.writeLineIO("Аргумент должен быть целым числом\n", Colors.RED);
             return false;
         }
     }
 
     @Override
-    public String toString() { return "remove_all_by_distance distance - удаляет элементы с заданным distance"; }
+    public String toString() {
+        return "remove_all_by_distance distance - удаляет элементы с заданным distance";
+    }
 }

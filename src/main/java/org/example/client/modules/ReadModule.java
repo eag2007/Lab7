@@ -1,7 +1,6 @@
 package org.example.client.modules;
 
 import org.example.client.managers.ManagerDeserialize;
-import org.example.client.managers.ResponseQueue;
 import org.example.packet.ResponsePacket;
 
 import java.io.ByteArrayInputStream;
@@ -13,7 +12,6 @@ import java.util.zip.GZIPInputStream;
 
 public class ReadModule {
     private static final int BUFFER_SIZE = 8192;
-    private static final long RESPONSE_TIMEOUT_MS = 10_000;
 
     public ResponsePacket readResponseForClient(SocketChannel serverChannel) throws IOException, ClassNotFoundException {
         /**

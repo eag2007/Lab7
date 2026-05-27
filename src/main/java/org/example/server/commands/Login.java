@@ -44,6 +44,8 @@ public class Login implements Command {
 
                 if (passwordHash.equals(inputHash)) {
 
+                    Server.getLoginToChannel().put(login, clientChannel);
+
                     Server.writeExecutor(
                             Codes.OK,
                             "Успешно вошли в аккаунт",

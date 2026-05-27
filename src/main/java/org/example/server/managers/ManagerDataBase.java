@@ -361,7 +361,7 @@ public class ManagerDataBase {
             pstmt.setString(1, author);
 
             int rows = pstmt.executeUpdate();
-            ServerLogger.info("Удаллено {} маршрутов пользователя {} из БД", rows, author);
+            ServerLogger.info("Удалено {} маршрутов пользователя {} из БД", rows, author);
             return rows;
         } catch (SQLException e) {
             ServerLogger.error("Ошибка удаления маршрутов пользователя {} {}", author, e.getMessage());
