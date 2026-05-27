@@ -1,10 +1,10 @@
 package org.example.server.commands;
 
+import org.example.packet.collection.Route;
 import org.example.packet.collection.RouteClient;
 import org.example.packet.enums.Codes;
 import org.example.server.Server;
 import org.example.server.interfaces.Command;
-import org.example.packet.collection.Route;
 import org.example.server.logger.ServerLogger;
 
 import java.nio.channels.SocketChannel;
@@ -42,7 +42,7 @@ public class RemoveFirst implements Command {
 
             long id = route.getId();
 
-            long deletedId = managerDataBase.deleteRouteInDB(id);
+            long deletedId = managerDataBase.deleteRouteInDB(id, login);
 
             if (deletedId == 0) {
 
@@ -68,13 +68,15 @@ public class RemoveFirst implements Command {
                 return Codes.ERROR;
             }
 
-            if (id == -3) {
+            if (deletedId == -3) {
+
                 Server.writeExecutor(
                         Codes.ERROR,
                         "База данных на сервере недоступна",
                         null,
                         clientChannel
                 );
+
                 return Codes.ERROR;
             }
 

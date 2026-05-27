@@ -140,18 +140,19 @@ public class ManagerDataBase {
 
     }
 
-    public synchronized long addRouteInDB(RouteClient routeClient, String author) {
+    public synchronized Route addRouteInDBFull(RouteClient routeClient, String author) {
         if (!repeatConnect()) {
             ServerLogger.error("Нет подключения к БД");
-            return -3;
+            throw new RuntimeException("DB_UNAVAILABLE");
         }
 
         try {
             String addRoute = """
                     INSERT INTO routes (name, coordinates_x, coordinates_y, from_x, from_y, from_z,
-                    to_x, to_y, to_z, distance, price, author) 
+                    to_x, to_y, to_z, distance, price, author)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    RETURNING id, creationDate;
+                    RETURNING id, creationDate, name, coordinates_x, coordinates_y,
+                              from_x, from_y, from_z, to_x, to_y, to_z, distance, price, author;
                     """;
 
             PreparedStatement pstmt = connection.prepareStatement(addRoute);
@@ -177,99 +178,131 @@ public class ManagerDataBase {
 
                 ServerLogger.info("Элемент с ID {} успешно добавлен в БД {}", id, creationDate);
 
-                return id;
+                return new Route(
+                        id,
+                        rs.getString("name"),
+                        new Coordinates(rs.getLong("coordinates_x"), rs.getLong("coordinates_y")),
+                        creationDate.toLocalDateTime().atZone(java.time.ZoneId.systemDefault()),
+                        new Location(rs.getFloat("from_x"), rs.getDouble("from_y"), rs.getInt("from_z")),
+                        new Location(rs.getFloat("to_x"), rs.getDouble("to_y"), rs.getInt("to_z")),
+                        rs.getInt("distance"),
+                        rs.getBigDecimal("price"),
+                        rs.getString("author")
+                );
             }
 
-            return -1;
+            return null;
+
+        } catch (SQLException e) {
+            if (e.getSQLState() != null && e.getSQLState().startsWith("08")) {
+                throw new RuntimeException("DB_UNAVAILABLE");
+            }
+            ServerLogger.error("Ошибка при sql запросе: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public synchronized Route updateRouteInDBFull(long id, RouteClient newData, String author) {
+        if (!repeatConnect()) {
+            ServerLogger.error("Нет подключения к БД");
+            throw new RuntimeException("DB_UNAVAILABLE");
+        }
+
+        try {
+            String updateRoute = """
+                    UPDATE routes SET
+                    name = ?,
+                    coordinates_x = ?,
+                    coordinates_y = ?,
+                    from_x = ?,
+                    from_y = ?,
+                    from_z = ?,
+                    to_x = ?,
+                    to_y = ?,
+                    to_z = ?,
+                    distance = ?,
+                    price = ?
+                    WHERE id = ? AND author = ?
+                    RETURNING id, creationDate, name, coordinates_x, coordinates_y,
+                              from_x, from_y, from_z, to_x, to_y, to_z, distance, price, author;
+                    """;
+
+            PreparedStatement pstmt = connection.prepareStatement(updateRoute);
+
+            pstmt.setString(1, newData.getName());
+            pstmt.setLong(2, newData.getCoordinates().getX());
+            pstmt.setLong(3, newData.getCoordinates().getY());
+            pstmt.setFloat(4, newData.getFrom().getX());
+            pstmt.setDouble(5, newData.getFrom().getY());
+            pstmt.setInt(6, newData.getFrom().getZ());
+            pstmt.setFloat(7, newData.getTo().getX());
+            pstmt.setDouble(8, newData.getTo().getY());
+            pstmt.setInt(9, newData.getTo().getZ());
+            pstmt.setInt(10, newData.getDistance());
+            pstmt.setBigDecimal(11, newData.getPrice());
+            pstmt.setLong(12, id);
+            pstmt.setString(13, author);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                Timestamp creationDate = rs.getTimestamp("creationDate");
+
+                ServerLogger.info("Маршрут с ID {} обновлён пользователем {}", id, author);
+
+                return new Route(
+                        rs.getLong("id"),
+                        rs.getString("name"),
+                        new Coordinates(rs.getLong("coordinates_x"), rs.getLong("coordinates_y")),
+                        creationDate.toLocalDateTime().atZone(java.time.ZoneId.systemDefault()),
+                        new Location(rs.getFloat("from_x"), rs.getDouble("from_y"), rs.getInt("from_z")),
+                        new Location(rs.getFloat("to_x"), rs.getDouble("to_y"), rs.getInt("to_z")),
+                        rs.getInt("distance"),
+                        rs.getBigDecimal("price"),
+                        rs.getString("author")
+                );
+            }
+
+            ServerLogger.debug("Маршрут с ID {} не найден у пользователя {}", id, author);
+            return null;
+
+        } catch (SQLException e) {
+            if (e.getSQLState() != null && e.getSQLState().startsWith("08")) {
+                throw new RuntimeException("DB_UNAVAILABLE");
+            }
+            ServerLogger.error("Ошибка обновления маршрута: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    public synchronized long deleteRouteInDB(long id, String author) {
+        if (!repeatConnect()) {
+            ServerLogger.error("Нет подключения к БД");
+            return -3;
+        }
+
+        try {
+            String deleteRoute = "DELETE FROM routes WHERE id = ? AND author = ? RETURNING id;";
+
+            PreparedStatement pstmt = connection.prepareStatement(deleteRoute);
+
+            pstmt.setLong(1, id);
+            pstmt.setString(2, author);
+
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                ServerLogger.info("Маршрут с ID {} удалён из БД", id);
+                return rs.getLong("id");
+            } else {
+                ServerLogger.info("Маршрут с ID {} не найден в БД у пользователя {}", id, author);
+                return 0;
+            }
 
         } catch (SQLException e) {
             if (e.getSQLState() != null && e.getSQLState().startsWith("08")) {
                 return -3;
             }
-            ServerLogger.error("Ошибка при sql запросе: {}", e.getMessage());
-            return -1;
-        }
-    }
-
-    public synchronized boolean updateRouteInDB(Route route, String author) {
-        if (connection == null) {
-            ServerLogger.error("Нет подключения к БД");
-            return false;
-        }
-
-        String updateRoute = """
-                UPDATE routes SET 
-                name = ?, 
-                coordinates_x = ?, 
-                coordinates_y = ?,
-                from_x = ?, 
-                from_y = ?, 
-                from_z = ?,
-                to_x = ?, 
-                to_y = ?, 
-                to_z = ?,
-                distance = ?, 
-                price = ?
-                WHERE id = ? AND author = ?;
-        """;
-
-        try {
-            PreparedStatement pstmt = connection.prepareStatement(updateRoute);
-
-            pstmt.setString(1, route.getName());
-            pstmt.setLong(2, route.getCoordinates().getX());
-            pstmt.setLong(3, route.getCoordinates().getY());
-            pstmt.setFloat(4, route.getFrom().getX());
-            pstmt.setDouble(5, route.getFrom().getY());
-            pstmt.setInt(6, route.getFrom().getZ());
-            pstmt.setFloat(7, route.getTo().getX());
-            pstmt.setDouble(8, route.getTo().getY());
-            pstmt.setInt(9, route.getTo().getZ());
-            pstmt.setInt(10, route.getDistance());
-            pstmt.setBigDecimal(11, route.getPrice());
-            pstmt.setLong(12, route.getId());
-            pstmt.setString(13, author);
-
-            int rows = pstmt.executeUpdate();
-
-            if (rows > 0) {
-                ServerLogger.info("Маршрут с ID {} обновлён пользователем {}", route.getId(), author);
-                return true;
-            } else {
-                ServerLogger.debug("Маршрут с ID {} не найден у пользователя {}", route.getId(), author);
-                return false;
-            }
-        } catch (SQLException e) {
-            ServerLogger.error("Ошибка обновления маршрута: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    public synchronized long deleteRouteInDB(long id) {
-        if (connection == null) {
-            ServerLogger.error("Нет подключения к БД");
-            return -3;
-        }
-
-        String deleteRoute = """
-                DELETE FROM routes WHERE id = ?;""";
-
-        try {
-            PreparedStatement pstmt = connection.prepareStatement(deleteRoute);
-
-            pstmt.setLong(1, id);
-
-            int rows = pstmt.executeUpdate();
-
-            if (rows > 0) {
-                ServerLogger.info("Маршрут с ID {} удалён из БД", id);
-                return id;
-            } else {
-                ServerLogger.info("Маршрут с ID {} не найден в БД", id);
-                return 0;
-            }
-
-        } catch (SQLException e) {
             ServerLogger.error("Ошибка удаления маршрута из БД: {}", e.getMessage());
             return -1;
         }

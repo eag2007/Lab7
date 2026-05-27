@@ -43,7 +43,6 @@ public class ManagerParserServer {
         String login = commandPacket.getLogin();
         String password = commandPacket.getPassword();
 
-        System.out.println(commandPacket.getType());
         if (!command_name.equals("login") && !command_name.equals("register")) {
 
             if (!managerDataBase.repeatConnect()) {

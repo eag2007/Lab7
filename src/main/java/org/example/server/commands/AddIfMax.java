@@ -22,8 +22,8 @@ public class AddIfMax implements Command {
                         "Не переданы данные элемента",
                         null,
                         clientChannel
-                )
-                ;
+                );
+
                 return Codes.WARNING;
             }
 
@@ -56,20 +56,9 @@ public class AddIfMax implements Command {
                 }
             }
 
-            long id = managerDataBase.addRouteInDB(value, login);
+            Route newRoute = managerDataBase.addRouteInDBFull(value, login);
 
-            if (id == -3) {
-
-                Server.writeExecutor(
-                        Codes.ERROR,
-                        "База данных на сервере недоступна",
-                        null,
-                        clientChannel
-                );
-
-                return Codes.ERROR;
-            }
-            if (id == -1) {
+            if (newRoute == null) {
 
                 Server.writeExecutor(
                         Codes.WARNING,
@@ -81,28 +70,30 @@ public class AddIfMax implements Command {
                 return Codes.WARNING;
             }
 
-            Route newRoute = new Route(
-                    id,
-                    value.getName(),
-                    value.getCoordinates(),
-                    value.getFrom(),
-                    value.getTo(),
-                    value.getDistance(),
-                    value.getPrice(),
-                    login
-            );
             managerCollections.addCollections(newRoute);
 
             Server.writeExecutor(
                     Codes.OK,
-                    "Элемент добавлен с ID: " + id,
-                    id,
+                    "Элемент добавлен с ID: " + newRoute.getId(),
+                    newRoute.getId(),
                     clientChannel
             );
 
             return Codes.OK;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if ("DB_UNAVAILABLE".equals(e.getMessage())) {
+
+                Server.writeExecutor(
+                        Codes.ERROR,
+                        "База данных на сервере недоступна",
+                        null,
+                        clientChannel
+                );
+
+                return Codes.ERROR;
+            }
+
             ServerLogger.error("Ошибка при добавлении: {}", e.getMessage());
 
             Server.writeExecutor(

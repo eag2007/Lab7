@@ -14,9 +14,9 @@ import static org.example.server.Server.*;
 public class Add implements Command {
     public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         try {
-            long id = managerDataBase.addRouteInDB(value, login);
+            Route route = managerDataBase.addRouteInDBFull(value, login);
 
-            if (id == -1) {
+            if (route == null) {
 
                 Server.writeExecutor(
                         Codes.WARNING,
@@ -28,30 +28,30 @@ public class Add implements Command {
                 return Codes.WARNING;
             }
 
-            if (id == -3) {
+            managerCollections.addCollections(route);
+
+            Server.writeExecutor(
+                    Codes.OK,
+                    "Объект добавлен в коллекцию с ID: " + route.getId(),
+                    route.getId(),
+                    clientChannel
+            );
+
+            return Codes.OK;
+
+        } catch (RuntimeException e) {
+            if ("DB_UNAVAILABLE".equals(e.getMessage())) {
+
                 Server.writeExecutor(
                         Codes.ERROR,
                         "База данных на сервере недоступна",
                         null,
                         clientChannel
                 );
+
                 return Codes.ERROR;
             }
 
-            Route route = managerDataBase.getRouteInDB(id, login);
-            if (route != null) {
-                managerCollections.addCollections(route);
-            }
-
-            Server.writeExecutor(
-                    Codes.OK,
-                    "Объект добавлен в коллекцию с ID: " + id,
-                    id,
-                    clientChannel
-            );
-
-            return Codes.OK;
-        } catch (Exception e) {
             ServerLogger.error("Ошибка добавления: {}", e.getMessage());
 
             Server.writeExecutor(

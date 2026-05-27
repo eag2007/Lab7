@@ -1,6 +1,5 @@
 package org.example.server.commands;
 
-import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Coordinates;
 import org.example.packet.collection.Location;
 import org.example.packet.collection.Route;
@@ -19,7 +18,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.example.server.Server.managerCollections;
-import static org.example.server.Server.writeModule;
+import static org.example.server.Server.managerDataBase;
 
 public class GenerateData implements Command {
 
@@ -31,14 +30,12 @@ public class GenerateData implements Command {
     public Codes executeCommand(String[] args, RouteClient value, SocketChannel clientChannel, String login, String password) {
         if (args.length < 1) {
             try {
-
                 Server.writeExecutor(
                         Codes.WARNING,
                         "Использование: generate_data {count}",
                         null,
                         clientChannel
                 );
-
             } catch (Exception e) {
                 ServerLogger.error("Ошибка отправки ответа generate_data: {}", e.getMessage());
             }
@@ -51,15 +48,12 @@ public class GenerateData implements Command {
             if (count <= 0) throw new NumberFormatException("Число должно быть положительным");
         } catch (NumberFormatException e) {
             try {
-
                 Server.writeExecutor(
                         Codes.WARNING,
                         "Аргумент count должен быть положительным целым числом",
                         null,
                         clientChannel
-
                 );
-
             } catch (Exception ex) {
                 ServerLogger.error("Ошибка отправки ответа generate_data: {}", ex.getMessage());
             }
@@ -80,7 +74,6 @@ public class GenerateData implements Command {
                     responseData,
                     clientChannel
             );
-
         } catch (Exception e) {
             ServerLogger.error("Ошибка отправки подтверждения generate_data: {}", e.getMessage());
             return Codes.ERROR;
@@ -94,12 +87,14 @@ public class GenerateData implements Command {
 
             try {
                 Random rnd = new Random();
+                int added = 0;
                 for (int i = 0; i < finalCount; i++) {
                     String name = NAMES[rnd.nextInt(NAMES.length)] + "-" + (i + 1);
 
+                    // coordinates_x <= 108, coordinates_y <= 20 (ограничения БД)
                     Coordinates coords = new Coordinates(
-                            rnd.nextLong() % 1000,
-                            rnd.nextLong() % 1000
+                            (long) (rnd.nextDouble() * 216) - 108,  // [-108, 108]
+                            (long) (rnd.nextDouble() * 40)  - 20    // [-20,  20]
                     );
                     Location from = new Location(
                             rnd.nextFloat() * 200 - 100,
@@ -115,15 +110,20 @@ public class GenerateData implements Command {
                     BigDecimal price = BigDecimal.valueOf(rnd.nextInt(100000) + 1, 2);
 
                     RouteClient route = new RouteClient(name, coords, from, to, distance, price);
-                    new Add().executeCommand(null, route, clientChannel, login, password);
+
+                    Route saved = managerDataBase.addRouteInDBFull(route, login);
+                    if (saved != null) {
+                        managerCollections.addCollections(saved);
+                        added++;
+                    }
 
                     if (finalCount > 100) {
                         Thread.sleep(2);
                     }
                 }
 
-                task.finish("Успешно сгенерировано " + finalCount + " элементов. Всего в коллекции: " + managerCollections.getSizeCollections());
-                ServerLogger.info("Задача {}: завершена, сгенерировано {} элементов", taskId, finalCount);
+                task.finish("Успешно сгенерировано " + added + " из " + finalCount + " элементов. Всего в коллекции: " + managerCollections.getSizeCollections());
+                ServerLogger.info("Задача {}: завершена, добавлено {}/{} элементов", taskId, added, finalCount);
 
             } catch (InterruptedException e) {
                 task.error("Задача прервана: " + e.getMessage());

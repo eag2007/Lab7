@@ -28,21 +28,20 @@ public class Update implements Command {
 
             long id = Long.parseLong(args[0]);
 
-            Route existingRoute = managerDataBase.getRouteInDB(id, login);
-
-            if (existingRoute == null) {
-
-                Server.writeExecutor(
-                        Codes.WARNING,
-                        "Элемент с id " + id + " не найден у пользователя " + login,
-                        null,
-                        clientChannel
-                );
-
-                return Codes.WARNING;
-            }
-
             if (newRoute == null) {
+                Route existingRoute = managerDataBase.getRouteInDB(id, login);
+
+                if (existingRoute == null) {
+
+                    Server.writeExecutor(
+                            Codes.WARNING,
+                            "Элемент с id " + id + " не найден у пользователя " + login,
+                            null,
+                            clientChannel
+                    );
+
+                    return Codes.WARNING;
+                }
 
                 Server.writeExecutor(
                         Codes.OK,
@@ -54,30 +53,18 @@ public class Update implements Command {
                 return Codes.OK;
             }
 
-            Route updatedRoute = new Route(
-                    id,
-                    newRoute.getName(),
-                    newRoute.getCoordinates(),
-                    existingRoute.getCreationDate(),
-                    newRoute.getFrom(),
-                    newRoute.getTo(),
-                    newRoute.getDistance(),
-                    newRoute.getPrice(),
-                    login
-            );
+            Route updatedRoute = managerDataBase.updateRouteInDBFull(id, newRoute, login);
 
-            boolean updated = managerDataBase.updateRouteInDB(updatedRoute, login);
-
-            if (!updated) {
+            if (updatedRoute == null) {
 
                 Server.writeExecutor(
-                        Codes.ERROR,
-                        "Ошибка обновления в БД",
+                        Codes.WARNING,
+                        "Элемент с id " + id + " не найден у пользователя " + login,
                         null,
                         clientChannel
                 );
 
-                return Codes.ERROR;
+                return Codes.WARNING;
             }
 
             managerCollections.updateRoute(updatedRoute);
@@ -101,7 +88,20 @@ public class Update implements Command {
             );
 
             return Codes.WARNING;
-        } catch (Exception e) {
+
+        } catch (RuntimeException e) {
+            if ("DB_UNAVAILABLE".equals(e.getMessage())) {
+
+                Server.writeExecutor(
+                        Codes.ERROR,
+                        "База данных на сервере недоступна",
+                        null,
+                        clientChannel
+                );
+
+                return Codes.ERROR;
+            }
+
             ServerLogger.error("Ошибка в update: {}", e.getMessage());
 
             Server.writeExecutor(
