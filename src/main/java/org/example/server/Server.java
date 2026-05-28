@@ -5,10 +5,7 @@ import org.example.packet.ResponsePacket;
 import org.example.packet.collection.Route;
 import org.example.packet.enums.Codes;
 import org.example.server.logger.ServerLogger;
-import org.example.server.managers.ManagerCollections;
-import org.example.server.managers.ManagerDataBase;
-import org.example.server.managers.ManagerParserServer;
-import org.example.server.managers.ManagerPush;
+import org.example.server.managers.*;
 import org.example.server.modules.ConnectModule;
 import org.example.server.modules.ReadModule;
 import org.example.server.modules.WriteModule;
@@ -24,7 +21,7 @@ import java.util.concurrent.Executors;
 public class Server {
     public static ManagerCollections managerCollections = new ManagerCollections();
     public static ManagerParserServer managerParserServer = new ManagerParserServer();
-    public static ManagerDataBase managerDataBase = ManagerDataBase.getInstance();
+    public static ManagerDataBaseShard managerDataBase = ManagerDataBaseShard.getInstance();
     public static ManagerPush managerPush = new ManagerPush();
 
     public static ReadModule readModule = new ReadModule();
