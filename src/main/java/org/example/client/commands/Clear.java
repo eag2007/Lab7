@@ -30,6 +30,6 @@ public class Clear implements Command {
 
     @Override
     public String toString() {
-        return "clear";
+        return "clear - очищает коллекцию";
     }
 }

@@ -30,6 +30,6 @@ public class RemoveFirst implements Command {
 
     @Override
     public String toString() {
-        return "remove_first";
+        return "remove_first - удаляет первый элемент";
     }
 }
