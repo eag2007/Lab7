@@ -46,11 +46,11 @@ public class ManagerParserServer {
 
         if (!command_name.equals("login") && !command_name.equals("register")) {
 
-            if (!managerDataBase.repeatConnect()) {
-                sendError(clientChannel, Codes.WARNING, "База данных временно недоступна. Попробуйте позже");
-                ServerLogger.debug("БД недоступна при выполнении команды {} от {}", command_name, login);
-                return Codes.WARNING;
-            }
+//            if (!managerDataBase.repeatConnect()) {
+//                sendError(clientChannel, Codes.WARNING, "База данных временно недоступна. Попробуйте позже");
+//                ServerLogger.debug("БД недоступна при выполнении команды {} от {}", command_name, login);
+//                return Codes.WARNING;
+//            }
 
             if (!managerDataBase.checkUserPasswordInDB(login, password)) {
                 ServerLogger.info("ПОПЫТКА ВЗЛОМА под логином пользователя {}", login);

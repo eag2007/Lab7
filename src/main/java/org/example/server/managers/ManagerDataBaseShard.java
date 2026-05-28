@@ -123,9 +123,15 @@ public class ManagerDataBaseShard {
                     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
                 """;
+
+        String createGlobalSeq = """
+                CREATE SEQUENCE IF NOT EXISTS global_route_id_seq
+                START 1 INCREMENT 1;
+                """;
+
         String createRoutes = """
                 CREATE TABLE IF NOT EXISTS routes (
-                    id SERIAL PRIMARY KEY,
+                    id BIGINT PRIMARY KEY,
                     name VARCHAR(255) NOT NULL,
                     coordinates_x BIGINT CHECK (coordinates_x <= 108),
                     coordinates_y BIGINT CHECK (coordinates_y <= 20),
@@ -147,7 +153,9 @@ public class ManagerDataBaseShard {
                 Statement stmt = shardsConnection.get(i).createStatement();
                 if (i == 0) {
                     stmt.execute(createUsers);
+                    stmt.execute(createGlobalSeq);
                 }
+                stmt.execute(createRoutes);
                 ServerLogger.info("Таблицы инициализированы в шарде {}", i);
             } catch (SQLException e) {
                 ServerLogger.error("Ошибка создания таблиц в шарде {}: {}", i, e.getMessage());
@@ -185,6 +193,19 @@ public class ManagerDataBaseShard {
         }
     }
 
+    private long nextGlobalId() throws SQLException {
+        synchronized (shardLock[0]) {
+            if (!ensureShard(0)) {
+                throw new SQLException("Шард 0 недоступен, не могу получить глобальный ID");
+            }
+            try (Statement stmt = shardsConnection.get(0).createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT nextval('global_route_id_seq')")){
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
     private Route mapRoute(ResultSet rs) throws SQLException {
         return new Route(
                 rs.getLong("id"),
@@ -209,27 +230,35 @@ public class ManagerDataBaseShard {
 
             Connection conn = shardsConnection.get(idx);
 
+            long globalId;
+            try {
+                globalId = nextGlobalId();
+            } catch (SQLException e) {
+                throw new RuntimeException("DB don't have connect");
+            }
+
             String sql = """
-                    INSERT INTO routes (name, coordinates_x, coordinates_y, from_x, from_y, from_z,
+                    INSERT INTO routes (id, name, coordinates_x, coordinates_y, from_x, from_y, from_z,
                                         to_x, to_y, to_z, distance, price, author)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     RETURNING id, creationDate, name, coordinates_x, coordinates_y,
                               from_x, from_y, from_z, to_x, to_y, to_z, distance, price, author;
                     """;
 
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setString(1, routeClient.getName());
-                pstmt.setLong(2, routeClient.getCoordinates().getX());
-                pstmt.setLong(3, routeClient.getCoordinates().getY());
-                pstmt.setFloat(4, routeClient.getFrom().getX());
-                pstmt.setDouble(5, routeClient.getFrom().getY());
-                pstmt.setInt(6, routeClient.getFrom().getZ());
-                pstmt.setFloat(7, routeClient.getTo().getX());
-                pstmt.setDouble(8, routeClient.getTo().getY());
-                pstmt.setInt(9, routeClient.getTo().getZ());
-                pstmt.setInt(10, routeClient.getDistance());
-                pstmt.setBigDecimal(11, routeClient.getPrice());
-                pstmt.setString(12, author);
+                pstmt.setLong(1, globalId);
+                pstmt.setString(2, routeClient.getName());
+                pstmt.setLong(3, routeClient.getCoordinates().getX());
+                pstmt.setLong(4, routeClient.getCoordinates().getY());
+                pstmt.setFloat(5, routeClient.getFrom().getX());
+                pstmt.setDouble(6, routeClient.getFrom().getY());
+                pstmt.setInt(7, routeClient.getFrom().getZ());
+                pstmt.setFloat(8, routeClient.getTo().getX());
+                pstmt.setDouble(9, routeClient.getTo().getY());
+                pstmt.setInt(10, routeClient.getTo().getZ());
+                pstmt.setInt(11, routeClient.getDistance());
+                pstmt.setBigDecimal(12, routeClient.getPrice());
+                pstmt.setString(13, author);
 
                 try (ResultSet rs = pstmt.executeQuery()) {
                     if (rs.next()) {
