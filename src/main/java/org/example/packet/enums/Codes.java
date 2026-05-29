@@ -1,6 +1,8 @@
 package org.example.packet.enums;
 
-public enum Codes {
+import java.io.Serializable;
+
+public enum Codes implements Serializable {
     OK(200),
     WARNING(400),
     ERROR(500),
